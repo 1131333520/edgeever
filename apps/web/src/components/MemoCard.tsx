@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, type DragEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
-import { GitBranch, Network, TableProperties, Workflow, Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
+import { GitBranch, Network, Presentation, TableProperties, Workflow, Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
 import { getMemoListTimestamp, type MemoSummary } from "@edgeever/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -414,6 +414,8 @@ export const MemoCard = ({
                 <div className="line-clamp-2 text-[13px] leading-relaxed text-slate-600 ">{memo.diagramPreview.labels.join(" · ")}</div>
               ) : null}
             </div>
+          ) : memo.infographic ? (
+            <div className="flex items-center gap-1 text-xs text-slate-500"><Presentation className="h-3 w-3" aria-hidden="true" />{t("infographic.name")}</div>
           ) : tableLabel ? (
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">

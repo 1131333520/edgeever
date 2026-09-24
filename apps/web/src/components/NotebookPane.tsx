@@ -11,6 +11,7 @@ import {
   LayoutGrid,
   LayoutList,
   LayoutTemplate,
+  Presentation,
   BookPlus,
   Boxes,
   ArrowDownWideNarrow,
@@ -321,6 +322,11 @@ const CreateMemoTypeItems = ({ onCreateMemo }: { onCreateMemo: (kind?: NoteCreat
       <DropdownMenuItem className="gap-2" onSelect={() => onCreateMemo("architecture")}>
         <Boxes className="h-4 w-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{t("diagram.architecture")}</span>
+      </DropdownMenuItem>
+      <DropdownMenuItem className="gap-2" onSelect={() => onCreateMemo("infographic")}>
+        <Presentation className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{t("infographic.name")}</span>
+        <span className="text-xs text-slate-400">{t("infographic.autoLayout")}</span>
       </DropdownMenuItem>
       <DropdownMenuItem className="gap-2" onSelect={() => onCreateMemo("table")}>
         <TableProperties className="h-4 w-4 shrink-0" />

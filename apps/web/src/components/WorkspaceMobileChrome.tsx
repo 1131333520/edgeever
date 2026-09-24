@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Boxes, ChevronDown, ChevronRight, FileText, Home, Network, Plus, Search, TableProperties, UserRound, Workflow, X } from "lucide-react";
+import { Boxes, ChevronDown, ChevronRight, FileText, Home, Network, Plus, Presentation, Search, TableProperties, UserRound, Workflow, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -103,6 +103,10 @@ export const MobileBottomNav = ({
             <DropdownMenuItem className="gap-2" onSelect={() => onCreateMemo("architecture")}>
               <Boxes className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{t("diagram.architecture")}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2" onSelect={() => onCreateMemo("infographic")}>
+              <Presentation className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 flex-1 truncate">{t("infographic.name")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2" onSelect={() => onCreateMemo("table")}>
               <TableProperties className="h-4 w-4 shrink-0" />
