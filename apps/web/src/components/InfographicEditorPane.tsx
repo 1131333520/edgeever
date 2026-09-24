@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { api } from "@/lib/api";
 import { createLocalEditSession, requiresLocalEditSession } from "@/components/editor/editor-pane-helpers";
-import { buildInfographicSyntax, buildOfficialInfographicSyntax, generatedInfographicSyntax, inferInfographicKind, infographicTemplatePrompt, INFOGRAPHIC_TEMPLATES, officialTemplateFamily, parseGeneratedInfographicContent, parseGeneratedOfficialData, parseGeneratedOfficialSelection, sampleOfficialData, shortlistOfficialTemplates, shouldReplaceExistingInfographic, templateForRequest, type InfographicItem } from "@/lib/infographic-generation";
+import { buildInfographicSyntax, buildOfficialInfographicSyntax, generatedInfographicSyntax, inferInfographicKind, infographicTemplatePrompt, INFOGRAPHIC_TEMPLATES, officialTemplateFamily, parseGeneratedInfographicContent, parseGeneratedOfficialData, parseGeneratedOfficialSelection, resolveInfographicTemplateSelection, sampleOfficialData, shouldReplaceExistingInfographic, type InfographicItem } from "@/lib/infographic-generation";
 import type { EdgeEverRepository } from "@/lib/repository";
 
 type Props = {
@@ -350,32 +350,28 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
     let output = "";
     try {
       const currentForm = parseSimpleForm(syntax);
-      const currentKind = INFOGRAPHIC_TEMPLATES.find((item) => item.id === currentForm?.template)?.kind;
-      const replaceExisting = shouldReplaceExistingInfographic(prompt, currentKind);
-      const requestedKind = inferInfographicKind(prompt) ?? (replaceExisting ? null : currentKind);
       const { parseSyntax, getTemplate, getTemplates } = await import("@antv/infographic");
       const availableTemplates = getTemplates();
       const existingOptions = parseSyntax(syntax).options;
       const existingTemplate = existingOptions.template;
-      const namedTemplate = availableTemplates.find((id) => prompt.includes(id));
-      const inferredTemplate = templateForRequest(prompt);
-      const requestedFamily = requestedKind === "steps" || requestedKind === "timeline" ? "sequence" : requestedKind;
-      const asksForDifferentTemplate = /(换成|改成|改用|换个|另一种|更适合的模板|模板|版式|布局|template|layout|style)/i.test(prompt);
-      const existingOfficial = existingTemplate && availableTemplates.includes(existingTemplate) && !INFOGRAPHIC_TEMPLATES.some((item) => item.id === existingTemplate)
-        && !asksForDifferentTemplate && (!requestedFamily || officialTemplateFamily(existingTemplate) === requestedFamily) ? existingTemplate : null;
-      const officialTarget = namedTemplate ?? inferredTemplate ?? existingOfficial;
+      const currentKind = INFOGRAPHIC_TEMPLATES.find((item) => item.id === existingTemplate)?.kind;
+      const replaceExisting = shouldReplaceExistingInfographic(prompt, currentKind);
+      const requestedKind = inferInfographicKind(prompt) ?? (replaceExisting ? null : currentKind);
+      const selection = resolveInfographicTemplateSelection(prompt, availableTemplates, existingTemplate);
+      const officialTarget = selection.template;
       const catalogAvailable = availableTemplates.length > 0 && !officialTarget;
-      const catalogCandidates = catalogAvailable ? shortlistOfficialTemplates(prompt, availableTemplates, existingTemplate) : [];
+      const catalogCandidates = catalogAvailable ? selection.candidates.slice(0, 8) : [];
       const currentContent = currentForm && !replaceExisting ? JSON.stringify({
         kind: currentKind, template: currentForm.template, title: currentForm.heading, description: currentForm.description,
         items: parseFormItems(currentForm.template, currentForm.items),
       }) : "";
-      const officialCurrentData = officialTarget === existingTemplate && existingOptions.data && !/(生成|重做|重新)/i.test(prompt)
-        ? JSON.stringify(existingOptions.data) : "";
-      const officialInstruction = officialTarget ? `User request: ${prompt.trim()}. Use the exact built-in AntV Infographic template "${officialTarget}". Its data family is "${officialTemplateFamily(officialTarget)}". ${officialCurrentData ? `Revise this current data, keeping parts the user did not ask to change: ${officialCurrentData.slice(0, 300)}.` : "Create new data."} Return ONLY valid JSON with a "data" object. Follow this example's keys and nesting, but replace the example content with relevant content: ${JSON.stringify(sampleOfficialData(officialTarget))}. For chart values use finite numeric values; for relation nodes give unique ids and only connect existing ids; for hierarchy use a root with nested children; for quadrants return exactly four compares; for binary comparison return exactly two compares with matched children. Keep labels and descriptions short enough to fit. Do not return AntV syntax, Markdown, or commentary.` : "";
-      const catalogInstruction = catalogAvailable ? `Request: ${prompt.trim()}. Choose the best AntV Infographic template from these installed candidates: ${catalogCandidates.join(", ")}. Return ONLY JSON: {"template":"one exact candidate ID","data":{...}}. Data example for this family: ${JSON.stringify(sampleOfficialData(catalogCandidates[0]))}. Replace sample content with useful content in the user's language. ${existingTemplate && existingOptions.data ? `Current: ${existingTemplate}, ${JSON.stringify(existingOptions.data).slice(0, 180)}. Preserve its substance for a small edit; change template when the request calls for a different kind of graphic.` : ""} Chart values must be numbers. Relation node IDs must be unique, with relations between existing IDs. Quadrant and SWOT need four compares; binary comparison needs two. Keep text concise. No Markdown.` : "";
+      const referenceData = existingTemplate && existingOptions.data
+        ? JSON.stringify({ template: existingTemplate, data: existingOptions.data }) : currentContent;
+      const referenceContent = referenceData.length <= 300_000 ? referenceData : syntax;
+      const officialInstruction = officialTarget ? `User request: ${prompt.trim()}. Use the exact AntV Infographic template "${officialTarget}" (${officialTemplateFamily(officialTarget)} family). ${referenceData && !replaceExisting ? "Revise the complete current data in Note content. Keep every unrequested subject, aspect, and value unchanged. Preserve its structure and update the title when a named subject changes." : `Create new data with this shape: ${JSON.stringify(sampleOfficialData(officialTarget))}.`} Return ONLY JSON with a "data" object. Binary comparisons require exactly two compares, each with matched children. Quadrants require four compares. Chart values must be finite numbers. Relation IDs must be unique and links valid. Keep text concise. No Markdown or commentary.` : "";
+      const catalogInstruction = catalogAvailable ? `User request: ${prompt.trim()}. Choose one AntV Infographic template from: ${catalogCandidates.join(", ")}. ${referenceData && !replaceExisting ? "Use the complete current infographic in Note content. Preserve its subjects and details unless the request changes them." : "Create new content."} Return ONLY JSON: {"template":"one exact candidate ID","data":{...}}. Data shape example: ${JSON.stringify(sampleOfficialData(catalogCandidates[0]))}. Binary comparisons need two compares with matched children; quadrants and SWOT need four compares. Chart values must be finite numbers. Keep text concise. No Markdown.` : "";
       await api.streamAiGeneration({
-        action: "custom", title: "", contentMarkdown: "", stream: true, attachments: [], locale: i18n.resolvedLanguage,
+        action: "custom", title: "", contentMarkdown: referenceContent, stream: true, attachments: [], locale: i18n.resolvedLanguage,
         instruction: (officialTarget ? officialInstruction : catalogAvailable ? catalogInstruction : `${currentContent ? `Revise this existing infographic content according to the user request. Keep details and template the user did not ask to change. Current content: ${currentContent}\n` : "Create a new infographic for the user request. Choose its structure based on the new request, independently of any previous infographic.\n"}User request: ${prompt.trim()}\nReturn ONLY one valid JSON object, with keys: "kind", "template", "title", "description", "items". "kind" must be one of "steps", "list", "timeline", "comparison", "quadrant".${requestedKind ? ` The requested kind is "${requestedKind}"; use it.` : " Choose the best kind for this request."} Select "template" from these built-in AntV templates, matching its kind and the user's intent: ${infographicTemplatePrompt()}. Use a shorter layout for few items and a denser layout for many items. "items" must be a JSON array of objects; each object must have "label" and "description" strings. For "quadrant", return exactly four items. For "comparison", return exactly two items, one per thing being compared. Each comparison item must have a short description and a "children" array of two or three matched comparison aspects; each child needs a short "label" and "description". Keep every comparison description under 24 Chinese characters (or 48 Latin letters) so it fits a card. If the request has no detailed data, invent a useful, clearly generic example. Use the request's language. Do not return AntV syntax, Markdown fences, explanations, or comments.`).slice(0, 2000),
       }, { onEvent: (event) => { if (event.type === "text-delta") output += event.text; if (event.type === "error") throw new Error(event.message); } });
       const officialData = officialTarget ? parseGeneratedOfficialData(output, officialTarget) : null;
@@ -384,7 +380,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
       const content = officialTarget || catalogAvailable ? null : parseGeneratedInfographicContent(output, prompt);
       if (!selectedOfficial && !content) throw new Error(t("infographic.aiInvalidResponse"));
       if (content && currentForm && !replaceExisting && !/(模板|版式|风格|样式|布局|紧凑|圆形|金字塔|网格|路线图|里程碑|编号|交错|template|layout|style|compact|circular|pyramid|grid|roadmap|milestone|numbered|zigzag)/i.test(prompt)) content.template = currentForm.template;
-      const candidate = selectedOfficial ? buildOfficialInfographicSyntax(selectedOfficial.template, selectedOfficial.data) : generatedInfographicSyntax(content!);
+      const candidate = selectedOfficial ? buildOfficialInfographicSyntax(selectedOfficial.template, selectedOfficial.data, syntax.split("\n")[1] === "theme dark") : generatedInfographicSyntax(content!);
       const parsedCandidate = parseSyntax(candidate);
       if (parsedCandidate.errors.length || !parsedCandidate.options.template || !getTemplate(parsedCandidate.options.template)) {
         throw new Error(t("infographic.aiInvalidResponse"));
@@ -397,7 +393,8 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
         kind: syntax.trim() ? "refined" : "generated", resultTitle: generatedTitle,
       }]);
       setSyntax(candidate);
-      if (!title.trim() || title.trim() === t("infographic.name") || (replaceExisting && title.trim() === currentForm?.heading)) setTitle(generatedTitle);
+      const previousGraphicTitle = String(existingOptions.data?.title ?? currentForm?.heading ?? "").trim();
+      if (!title.trim() || title.trim() === t("infographic.name") || (previousGraphicTitle && title.trim() === previousGraphicTitle)) setTitle(generatedTitle);
       setPrompt("");
     } catch (caught) { setError(caught instanceof Error ? caught.message : t("infographic.aiError")); }
     finally { setGenerating(false); }

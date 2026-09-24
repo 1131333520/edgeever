@@ -167,9 +167,10 @@ export const shortlistOfficialTemplates = (request: string, templates: string[],
     : /(四象限|象限|quadrant)/i.test(request) ? "quadrant"
     : /(对比|比较|差异|swot|\bvs\b|comparison)/i.test(request) ? "comparison"
     : /(步骤|流程|时间线|时间轴|路线图|里程碑|step|process|timeline|roadmap)/i.test(request) ? "sequence"
-    : /(饼图|柱状图|折线图|图表|数据|chart|graph)/i.test(request) ? "chart" : "list";
+    : /(饼图|柱状图|折线图|图表|chart|graph)/i.test(request) ? "chart"
+    : currentTemplate ? officialTemplateFamily(currentTemplate) : "list";
   const words = request.toLowerCase().match(/[a-z]+/g) ?? [];
-  const preferred = new Set([templateForRequest(request), currentTemplate].filter(Boolean));
+  const preferred = new Set([templateForRequest(request), ...(!requestsInfographicLayoutChange(request) ? [currentTemplate] : [])].filter(Boolean));
   const candidates = templates.filter((id) => officialTemplateFamily(id) === requestedFamily);
   const comparisonCandidates = requestedFamily === "comparison"
     ? /(swot|优劣势)/i.test(request) ? candidates.filter((id) => id === "compare-swot")
@@ -177,7 +178,10 @@ export const shortlistOfficialTemplates = (request: string, templates: string[],
       : /(前后|变化|before|after|箭头)/i.test(request) ? candidates.filter((id) => id.includes("arrow"))
       : candidates.filter((id) => id.endsWith("-vs"))
     : candidates;
-  return (comparisonCandidates.length ? comparisonCandidates : candidates)
+  const familyCandidates = comparisonCandidates.length ? comparisonCandidates : candidates;
+  const alternatives = requestsInfographicLayoutChange(request)
+    ? familyCandidates.filter((id) => id !== currentTemplate) : familyCandidates;
+  return (alternatives.length ? alternatives : familyCandidates)
     .map((id, index) => ({ id, score: (preferred.has(id) ? 100 : 0) + words.filter((word) => word.length > 2 && id.includes(word)).length * 8 - index * 0.01 }))
     .sort((left, right) => right.score - left.score)
     .slice(0, 12)
@@ -225,6 +229,10 @@ export const inferInfographicKind = (request: string): InfographicKind | null =>
   return null;
 };
 
+export const requestsInfographicLayoutChange = (request: string) =>
+  /(模板|版式|风格|样式|布局|排版|紧凑|圆形|金字塔|网格|路线图|里程碑|编号|交错|template|layout|style|compact|circular|pyramid|grid|roadmap|milestone|numbered|zigzag)/i.test(request)
+  || /(换个|另一种|其他).{0,8}(图|模板|版式)/i.test(request);
+
 const inferInfographicTemplate = (request: string, kind: InfographicKind): string | null => {
   if (kind === "quadrant" && /(圆形|圆环|circular)/i.test(request)) return "compare-quadrant-quarter-circular";
   if (kind === "comparison" && /(紧凑|密集|compact)/i.test(request)) return "compare-binary-horizontal-compact-card-vs";
@@ -238,8 +246,23 @@ const inferInfographicTemplate = (request: string, kind: InfographicKind): strin
   return null;
 };
 
+export const resolveInfographicTemplateSelection = (request: string, templates: string[], currentTemplate?: string) => {
+  const namedTemplate = templates.find((id) => request.includes(id));
+  const requestedKind = inferInfographicKind(request);
+  const inferredTemplate = templateForRequest(request)
+    ?? (requestsInfographicLayoutChange(request) && requestedKind ? inferInfographicTemplate(request, requestedKind) : null);
+  const explicitTemplate = namedTemplate ?? (inferredTemplate && templates.includes(inferredTemplate) ? inferredTemplate : null);
+  if (explicitTemplate) return { template: explicitTemplate, candidates: [] as string[] };
+  const requestedFamily = requestedKind === "steps" || requestedKind === "timeline" ? "sequence" : requestedKind;
+  if (currentTemplate && templates.includes(currentTemplate) && !requestsInfographicLayoutChange(request)
+    && (!requestedFamily || officialTemplateFamily(currentTemplate) === requestedFamily)) {
+    return { template: currentTemplate, candidates: [] as string[] };
+  }
+  return { template: null, candidates: shortlistOfficialTemplates(request, templates, currentTemplate) };
+};
+
 export const shouldReplaceExistingInfographic = (request: string, currentKind: InfographicKind | undefined) => {
-  if (!currentKind) return true;
+  if (!currentKind) return /(生成|画|做|重做|重新|全新).{0,40}(图|信息图|对比|比较|时间线|流程)/i.test(request);
   const requestedKind = inferInfographicKind(request);
   if (requestedKind && requestedKind !== currentKind) return true;
   if (/(模板|版式|风格|样式|布局|紧凑|圆形|template|layout|style)/i.test(request) && !/(生成|画|做|重做|重新)/i.test(request)) return false;

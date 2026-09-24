@@ -9,6 +9,8 @@ import {
   parseGeneratedInfographicContent,
   parseGeneratedOfficialData,
   parseGeneratedOfficialSelection,
+  resolveInfographicTemplateSelection,
+  requestsInfographicLayoutChange,
   sampleOfficialData,
   selectableInfographicTemplates,
   shortlistOfficialTemplates,
@@ -125,5 +127,44 @@ describe("infographic generation", () => {
     const mindmap = shortlistOfficialTemplates("画思维导图", templates);
     expect(mindmap.every((id) => officialTemplateFamily(id) === "hierarchy")).toBe(true);
     expect(templates).toContain("compare-quadrant-quarter-simple-card");
+  });
+
+  test("replacing a comparison subject keeps the existing two-sided template", () => {
+    const templates = getTemplates();
+    const current = "compare-binary-horizontal-badge-card-vs";
+    for (const request of ["把字节给我换成阿里巴巴", "把对比从字节换成阿里巴巴", "把字节改成阿里巴巴，其余不变"]) {
+      expect(requestsInfographicLayoutChange(request)).toBe(false);
+      expect(shouldReplaceExistingInfographic(request, undefined)).toBe(false);
+      expect(resolveInfographicTemplateSelection(request, templates, current)).toEqual({ template: current, candidates: [] });
+    }
+    const currentData = {
+      title: "腾讯 vs 字节跳动 对比",
+      compares: [
+        { label: "腾讯", children: [{ label: "核心业务", desc: "社交与游戏" }] },
+        { label: "字节跳动", children: [{ label: "核心业务", desc: "短视频与推荐" }] },
+      ],
+    };
+    const revisedData = {
+      ...currentData,
+      title: "腾讯 vs 阿里巴巴 对比",
+      compares: [currentData.compares[0], { label: "阿里巴巴", children: [{ label: "核心业务", desc: "电商与云计算" }] }],
+    };
+    const parsed = parseGeneratedOfficialData(JSON.stringify({ data: revisedData }), current);
+    expect(parsed?.compares).toEqual(revisedData.compares);
+    const syntax = buildOfficialInfographicSyntax(current, parsed);
+    expect(parseSyntax(syntax).options.template).toBe(current);
+  });
+
+  test("explicit layout changes can select a new style within the current family", () => {
+    const templates = getTemplates();
+    const current = "compare-binary-horizontal-badge-card-vs";
+    expect(resolveInfographicTemplateSelection("换成紧凑对比图版式", templates, current).template).toBe("compare-binary-horizontal-compact-card-vs");
+    const alternative = resolveInfographicTemplateSelection("换个版式", templates, current);
+    expect(alternative.template).toBeNull();
+    expect(alternative.candidates.length).toBeGreaterThan(0);
+    expect(alternative.candidates.every((id) => officialTemplateFamily(id) === "comparison")).toBe(true);
+    expect(alternative.candidates).not.toContain(current);
+    expect(resolveInfographicTemplateSelection("换个版式，数据保留", templates, current).candidates.every((id) => officialTemplateFamily(id) === "comparison")).toBe(true);
+    expect(resolveInfographicTemplateSelection("改成四象限图", templates, current).candidates.every((id) => officialTemplateFamily(id) === "quadrant")).toBe(true);
   });
 });
