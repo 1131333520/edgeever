@@ -156,7 +156,11 @@ export const createWeChatShareController = ({
       if (preparedDirectory) await rm(preparedDirectory, { recursive: true, force: true }).catch(() => {});
       const reason = error instanceof WeChatArchiveError ? error.code : "failed";
       failedPaths.add(requestedPath);
-      sendToRenderer({ ok: false, reason: reason === "unrecognized" ? "unrecognized" : "failed" });
+      // A stale or malformed protocol URL may arrive before the incoming-folder
+      // scan finds the actual share. It is not a failed save attempt.
+      if (reason !== "rejected-path") {
+        sendToRenderer({ ok: false, reason: reason === "unrecognized" ? "unrecognized" : "failed" });
+      }
       void writeDiagnostic("wechat-import.rejected", { reason });
     } finally {
       inFlightPaths.delete(requestedPath);

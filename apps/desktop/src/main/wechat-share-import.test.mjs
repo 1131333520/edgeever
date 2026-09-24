@@ -129,8 +129,48 @@ describe("WeChat share handoff", () => {
       sendToRenderer: (payload) => sent.push(payload),
     });
     await controller.importFromProtocolUrl(`edgeever://wechat-import?path=${encodeURIComponent(outside)}`);
-    expect(sent[0]).toEqual({ ok: false, reason: "failed" });
+    expect(sent).toHaveLength(0);
     expect((await readFile(outside)).toString()).toBe("secret");
+  });
+
+  test("a rejected protocol path does not report failure before a valid share is scanned", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    const zipPath = join(batch, "聊天记录.zip");
+    await writeFile(zipPath, zipOf("聊天记录.txt", "·鱼\n2026年9月22日 22:15\n你好\n", "附件/readme.txt", "hello"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importFromProtocolUrl(`edgeever://wechat-import?path=${encodeURIComponent(join(root, "stale.zip"))}`);
+    await controller.importPending();
+    expect(sent).toHaveLength(1);
+    expect(sent[0].ok).toBe(true);
+    await controller.finish(sent[0].importId, true);
+    await expect(stat(zipPath)).rejects.toThrow();
+  });
+
+  test("reports a recognized incoming path with an invalid archive", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    const zipPath = join(batch, "broken.zip");
+    await writeFile(zipPath, "not a zip");
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importPending();
+    expect(sent).toEqual([{ ok: false, reason: "failed" }]);
   });
 
   test("picks up a completed share without a protocol URL and ignores a duplicate URL", async () => {
