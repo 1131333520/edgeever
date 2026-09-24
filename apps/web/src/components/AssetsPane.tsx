@@ -333,7 +333,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
                       size="icon"
                       variant="ghost"
                       aria-label={t("assets.deleteAria", { filename: resource.filename || resource.id })}
-                      className="absolute right-2 top-2 z-10 h-8 w-8 bg-card/90 text-slate-500 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100"
+                      className="edgeever-reveal-on-touch absolute right-2 top-2 z-10 h-8 w-8 bg-card/90 text-slate-500 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100 focus-within:opacity-100"
                       onClick={() => requestResourceDelete(resource)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -474,7 +474,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
                       size="icon"
                       variant="ghost"
                       aria-label={t("assets.deleteAria", { filename: resource.filename || resource.id })}
-                      className="h-8 w-8 text-slate-350 opacity-0 transition-all duration-150 hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100"
+                      className="edgeever-reveal-on-touch h-8 w-8 text-slate-350 opacity-0 transition-all duration-150 hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100 focus-within:opacity-100"
                       onClick={() => requestResourceDelete(resource)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -486,7 +486,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
                       target="_blank"
                       rel="noreferrer"
                       aria-label={t("assets.openInNewWindow")}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-350 hover:bg-slate-50 hover:text-emerald-600 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-150"
+                      className="edgeever-reveal-on-touch flex h-8 w-8 items-center justify-center rounded-lg text-slate-350 hover:bg-slate-50 hover:text-emerald-600 opacity-0 group-hover:opacity-100 focus:opacity-100 focus-within:opacity-100 transition-all duration-150"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </a>

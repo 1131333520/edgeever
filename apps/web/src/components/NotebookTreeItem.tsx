@@ -282,7 +282,7 @@ export const NotebookTreeItem = ({
             <div ref={actionsRef} className="relative shrink-0">
                 <button
                   className={cn(
-                    "hidden h-6 w-6 items-center justify-center rounded-md group-focus-within:flex group-hover:flex transition-colors duration-150",
+                    "edgeever-reveal-on-touch hidden h-6 w-6 items-center justify-center rounded-md group-focus-within:flex group-hover:flex transition-colors duration-150",
                     selected ? "hover:bg-slate-200" : "hover:bg-slate-100"
                   )}
                   type="button"
