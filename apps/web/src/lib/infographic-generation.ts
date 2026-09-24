@@ -41,7 +41,21 @@ export type InfographicFamilyDecision = {
   ambiguous: boolean;
 };
 
-export const parseInfographicFamilyDecision = (output: string): InfographicFamilyDecision | null => {
+export type InfographicEditDecision = InfographicFamilyDecision & { intent: "keep" | "layout" | "change" };
+
+export const parseInfographicEditDecision = (output: string): InfographicEditDecision | null => {
+  const family = parseInfographicFamilyDecision(output, false);
+  if (!family) return null;
+  const first = output.indexOf("{");
+  const last = output.lastIndexOf("}");
+  try {
+    const value: unknown = JSON.parse(output.slice(first, last + 1));
+    if (!isRecord(value) || !["keep", "layout", "change"].includes(String(value.intent))) return null;
+    return { ...family, intent: value.intent as InfographicEditDecision["intent"] };
+  } catch { return null; }
+};
+
+export const parseInfographicFamilyDecision = (output: string, requireAlternatives = true): InfographicFamilyDecision | null => {
   const first = output.indexOf("{");
   const last = output.lastIndexOf("}");
   if (first < 0 || last <= first) return null;
@@ -53,7 +67,7 @@ export const parseInfographicFamilyDecision = (output: string): InfographicFamil
       || !Array.isArray(value.alternatives)) return null;
     const alternatives = value.alternatives.filter((family): family is OfficialTemplateFamily =>
       INFOGRAPHIC_FAMILIES.includes(family as OfficialTemplateFamily) && family !== value.family);
-    if ((value.ambiguous || value.confidence < 0.65) && alternatives.length === 0) return null;
+    if (requireAlternatives && (value.ambiguous || value.confidence < 0.65) && alternatives.length === 0) return null;
     return { family: value.family as OfficialTemplateFamily, confidence: value.confidence,
       alternatives: [...new Set(alternatives)].slice(0, 2), ambiguous: value.ambiguous };
   } catch { return null; }
@@ -311,6 +325,19 @@ export const resolveInfographicTemplateSelection = (request: string, templates: 
     return { template: currentTemplate, candidates: [] as string[] };
   }
   return { template: null, candidates: shortlistOfficialTemplates(request, templates, currentTemplate) };
+};
+
+export const resolveInfographicEditSelection = (request: string, templates: string[], currentTemplate: string, decision: InfographicEditDecision) => {
+  if (decision.intent === "keep") return { template: currentTemplate, candidates: [] as string[] };
+  const family = decision.intent === "layout" ? officialTemplateFamily(currentTemplate) : decision.family;
+  if (decision.intent === "layout") {
+    const requested = resolveInfographicTemplateSelection(request, templates, currentTemplate);
+    if (requested.template && requested.template !== currentTemplate && officialTemplateFamily(requested.template) === family) return requested;
+  }
+  const selection = resolveInfographicTemplateSelection(request, templates, currentTemplate, family);
+  if (decision.intent !== "layout") return selection;
+  const alternatives = selection.candidates.filter((id) => id !== currentTemplate);
+  return { template: selection.template, candidates: alternatives.length ? alternatives : selection.candidates };
 };
 
 export const shouldReplaceExistingInfographic = (request: string, currentKind: InfographicKind | undefined) => {

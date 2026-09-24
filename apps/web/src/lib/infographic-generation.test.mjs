@@ -11,7 +11,9 @@ import {
   parseGeneratedInfographicContent,
   parseGeneratedOfficialData,
   parseGeneratedOfficialSelection,
+  parseInfographicEditDecision,
   parseInfographicFamilyDecision,
+  resolveInfographicEditSelection,
   resolveInfographicTemplateSelection,
   requestsInfographicLayoutChange,
   requestsInfographicFamilyChange,
@@ -192,5 +194,20 @@ describe("infographic generation", () => {
     expect(parseInfographicFamilyDecision('{"family":"made-up","confidence":1,"ambiguous":false,"alternatives":[]}')).toBeNull();
     expect(parseInfographicFamilyDecision('{"family":"list","confidence":1.4,"ambiguous":false,"alternatives":[]}')).toBeNull();
     expect(parseInfographicFamilyDecision('{"family":"list","confidence":0.4,"ambiguous":true,"alternatives":[]}')).toBeNull();
+  });
+
+  test("semantic edit decisions preserve a comparison subject edit and switch a timeline request", () => {
+    const templates = getTemplates();
+    const current = "compare-binary-horizontal-badge-card-vs";
+    const keep = parseInfographicEditDecision('{"intent":"keep","family":"comparison","confidence":0.97,"ambiguous":false,"alternatives":[]}');
+    expect(keep?.intent).toBe("keep");
+    expect(resolveInfographicEditSelection("把字节跳动换成阿里巴巴", templates, current, keep).template).toBe(current);
+    const change = parseInfographicEditDecision('{"intent":"change","family":"sequence","confidence":0.93,"ambiguous":false,"alternatives":[]}');
+    expect(resolveInfographicEditSelection("按时间顺序展示发展历程", templates, current, change).candidates.every((id) => officialTemplateFamily(id) === "sequence")).toBe(true);
+    const layout = parseInfographicEditDecision('{"intent":"layout","family":"list","confidence":0.82,"ambiguous":false,"alternatives":[]}');
+    expect(resolveInfographicEditSelection("让画面更紧凑", templates, current, layout).candidates.every((id) => officialTemplateFamily(id) === "comparison")).toBe(true);
+    expect(resolveInfographicEditSelection("让画面更紧凑", templates, current, layout).candidates).not.toContain(current);
+    expect(resolveInfographicEditSelection("换成紧凑对比图版式", templates, current, layout).template).toBe("compare-binary-horizontal-compact-card-vs");
+    expect(parseInfographicEditDecision('{"intent":"unknown","family":"sequence","confidence":1,"ambiguous":false,"alternatives":[]}')).toBeNull();
   });
 });

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { api } from "@/lib/api";
 import { createLocalEditSession, requiresLocalEditSession } from "@/components/editor/editor-pane-helpers";
-import { buildInfographicSyntax, buildOfficialInfographicSyntax, generatedInfographicSyntax, inferInfographicFamily, inferInfographicKind, infographicFamilyChoices, infographicTemplatePrompt, INFOGRAPHIC_TEMPLATES, officialTemplateFamily, parseGeneratedInfographicContent, parseGeneratedOfficialData, parseGeneratedOfficialSelection, parseInfographicFamilyDecision, requestsInfographicFamilyChange, requestsInfographicLayoutChange, resolveInfographicTemplateSelection, sampleOfficialData, shouldReplaceExistingInfographic, type InfographicItem, type OfficialTemplateFamily } from "@/lib/infographic-generation";
+import { buildInfographicSyntax, buildOfficialInfographicSyntax, generatedInfographicSyntax, inferInfographicFamily, inferInfographicKind, infographicFamilyChoices, infographicTemplatePrompt, INFOGRAPHIC_TEMPLATES, officialTemplateFamily, parseGeneratedInfographicContent, parseGeneratedOfficialData, parseGeneratedOfficialSelection, parseInfographicEditDecision, parseInfographicFamilyDecision, resolveInfographicEditSelection, resolveInfographicTemplateSelection, sampleOfficialData, shouldReplaceExistingInfographic, type InfographicEditDecision, type InfographicItem, type OfficialTemplateFamily } from "@/lib/infographic-generation";
 import type { EdgeEverRepository } from "@/lib/repository";
 
 type Props = {
@@ -175,7 +175,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
   const [syntax, setSyntax] = useState(parsed?.syntax ?? "");
   const [history, setHistory] = useState<InfographicConversationTurn[]>(parsed?.history ?? []);
   const [prompt, setPrompt] = useState("");
-  const [familyChoice, setFamilyChoice] = useState<{ prompt: string; options: OfficialTemplateFamily[] } | null>(null);
+  const [familyChoice, setFamilyChoice] = useState<{ prompt: string; options: Array<OfficialTemplateFamily | "keep"> } | null>(null);
   const [previousGeneration, setPreviousGeneration] = useState<{ title: string; syntax: string; turnId: string } | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -345,7 +345,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
     return () => window.clearTimeout(timer);
   }, [dirty, ready, readOnly, saving, generating, renderError, previewReady, snapshot, syntax, historyDirty]);
 
-  const generate = async (familyOverride?: OfficialTemplateFamily) => {
+  const generate = async (familyOverride?: OfficialTemplateFamily | "keep") => {
     if (!prompt.trim() || generating || readOnly) return;
     setGenerating(true); setError(null); setFamilyChoice(null);
     let output = "";
@@ -356,40 +356,60 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
       const existingOptions = parseSyntax(syntax).options;
       const existingTemplate = existingOptions.template;
       const currentKind = INFOGRAPHIC_TEMPLATES.find((item) => item.id === existingTemplate)?.kind;
-      const replaceExisting = shouldReplaceExistingInfographic(prompt, currentKind);
-      const requestedKind = inferInfographicKind(prompt) ?? (replaceExisting ? null : currentKind);
-      const currentContent = currentForm && !replaceExisting ? JSON.stringify({
+      const currentContent = currentForm ? JSON.stringify({
         kind: currentKind, template: currentForm.template, title: currentForm.heading, description: currentForm.description,
         items: parseFormItems(currentForm.template, currentForm.items),
       }) : "";
       const referenceData = existingTemplate && existingOptions.data
         ? JSON.stringify({ template: existingTemplate, data: existingOptions.data }) : currentContent;
       const referenceContent = referenceData.length <= 300_000 ? referenceData : syntax;
-      let selectedFamily = familyOverride;
-      if (!selectedFamily && !inferInfographicFamily(prompt)
-        && (!existingTemplate || (requestsInfographicLayoutChange(prompt) && requestsInfographicFamilyChange(prompt)))) {
+      let selectedFamily = familyOverride && familyOverride !== "keep" ? familyOverride : undefined;
+      let editIntent: "keep" | "layout" | "change" | undefined = familyOverride === "keep" ? "keep" : selectedFamily ? "change" : undefined;
+      let editDecision: InfographicEditDecision | undefined;
+      if (!familyOverride && (existingTemplate || !inferInfographicFamily(prompt))) {
         let classificationOutput = "";
         await api.streamAiGeneration({
           action: "custom", title: "", contentMarkdown: referenceContent, stream: true, attachments: [], locale: i18n.resolvedLanguage,
-          instruction: `Classify the user's desired infographic by its semantic data structure. User request: ${prompt.trim()}. Choose exactly one family: chart (numeric values or trends), comparison (two or more subjects or pros/cons), hierarchy (tree or taxonomy), list (unordered parallel items), quadrant (four cells on two axes), relation (entities connected by edges), sequence (ordered steps or time). Prioritize the relationship between items over decorative style. Return ONLY JSON: {"family":"one family ID","confidence":0.0,"ambiguous":false,"alternatives":["up to two other family IDs"]}. Mark ambiguous true and include alternatives when multiple families fit equally well. No Markdown.`,
+          instruction: existingTemplate
+            ? `Decide how to edit the existing infographic described in Note content. Current template family: ${officialTemplateFamily(existingTemplate)}. User request: ${prompt.trim()}. Classify intent as keep (only content, subjects, labels or values change), layout (visual arrangement changes but the data relationship remains), or change (the requested data relationship needs a different family). Replacing a compared company, such as ByteDance with Alibaba, is keep. Turning a comparison into a timeline or a list into a hierarchy is change. Infer intent from meaning, not only words like "change" or "diagram". For keep, use the current family. For layout, use the current family. For change, choose chart, comparison, hierarchy, list, quadrant, relation, or sequence. Return ONLY JSON: {"intent":"keep|layout|change","family":"family ID","confidence":0.0,"ambiguous":false,"alternatives":[]}. If a family change is uncertain, include up to two alternative family IDs. No Markdown.`
+            : `Classify the user's desired infographic by its semantic data structure. User request: ${prompt.trim()}. Choose exactly one family: chart (numeric values or trends), comparison (two or more subjects or pros/cons), hierarchy (tree or taxonomy), list (unordered parallel items), quadrant (four cells on two axes), relation (entities connected by edges), sequence (ordered steps or time). Prioritize the relationship between items over decorative style. Return ONLY JSON: {"family":"one family ID","confidence":0.0,"ambiguous":false,"alternatives":["up to two other family IDs"]}. Mark ambiguous true and include alternatives when multiple families fit equally well. No Markdown.`,
         }, { onEvent: (event) => { if (event.type === "text-delta") classificationOutput += event.text; if (event.type === "error") throw new Error(event.message); } });
-        const decision = parseInfographicFamilyDecision(classificationOutput);
-        if (!decision) throw new Error(t("infographic.aiInvalidResponse"));
-        const choices = infographicFamilyChoices(decision);
-        if (choices.length > 1) {
-          setFamilyChoice({ prompt: prompt.trim(), options: choices });
-          return;
+        if (existingTemplate) {
+          const decision = parseInfographicEditDecision(classificationOutput);
+          if (!decision) throw new Error(t("infographic.aiInvalidResponse"));
+          editDecision = decision;
+          editIntent = decision.intent;
+          if (editIntent === "change" && (decision.ambiguous || decision.confidence < 0.65)) {
+            const options: Array<OfficialTemplateFamily | "keep"> = ["keep", decision.family, ...decision.alternatives];
+            setFamilyChoice({ prompt: prompt.trim(), options: [...new Set(options)].slice(0, 3) });
+            return;
+          }
+          if (editIntent === "change") selectedFamily = decision.family;
+        } else {
+          const decision = parseInfographicFamilyDecision(classificationOutput);
+          if (!decision) throw new Error(t("infographic.aiInvalidResponse"));
+          const choices = infographicFamilyChoices(decision);
+          if (choices.length > 1) {
+            setFamilyChoice({ prompt: prompt.trim(), options: choices });
+            return;
+          }
+          selectedFamily = decision.family;
         }
-        selectedFamily = decision.family;
       }
-      const selection = selectedFamily
-        ? resolveInfographicTemplateSelection(prompt, availableTemplates, existingTemplate, selectedFamily)
-        : resolveInfographicTemplateSelection(prompt, availableTemplates, existingTemplate);
+      const replaceExisting = existingTemplate ? editIntent === "change" : shouldReplaceExistingInfographic(prompt, currentKind);
+      const requestedKind = inferInfographicKind(prompt) ?? (replaceExisting ? null : currentKind);
+      const selection = existingTemplate && editDecision
+        ? resolveInfographicEditSelection(prompt, availableTemplates, existingTemplate, editDecision)
+        : existingTemplate && editIntent === "keep"
+          ? { template: existingTemplate, candidates: [] as string[] }
+          : selectedFamily
+            ? resolveInfographicTemplateSelection(prompt, availableTemplates, existingTemplate, selectedFamily)
+            : resolveInfographicTemplateSelection(prompt, availableTemplates, existingTemplate);
       const officialTarget = selection.template;
       const catalogAvailable = availableTemplates.length > 0 && !officialTarget;
       const catalogCandidates = catalogAvailable ? selection.candidates.slice(0, 8) : [];
-      const officialInstruction = officialTarget ? `User request: ${prompt.trim()}. Use the exact AntV Infographic template "${officialTarget}" (${officialTemplateFamily(officialTarget)} family). ${referenceData && !replaceExisting ? "Revise the complete current data in Note content. Keep every unrequested subject, aspect, and value unchanged. Preserve its structure and update the title when a named subject changes." : `Create new data with this shape: ${JSON.stringify(sampleOfficialData(officialTarget))}.`} Return ONLY JSON with a "data" object. Binary comparisons require exactly two compares, each with matched children. Quadrants require four compares. Chart values must be finite numbers. Relation IDs must be unique and links valid. Keep text concise. No Markdown or commentary.` : "";
-      const catalogInstruction = catalogAvailable ? `User request: ${prompt.trim()}. Choose one AntV Infographic template from: ${catalogCandidates.join(", ")}. ${referenceData && !replaceExisting ? "Use the complete current infographic in Note content. Preserve its subjects and details unless the request changes them." : "Create new content."} Return ONLY JSON: {"template":"one exact candidate ID","data":{...}}. Data shape example: ${JSON.stringify(sampleOfficialData(catalogCandidates[0]))}. Binary comparisons need two compares with matched children; quadrants and SWOT need four compares. Chart values must be finite numbers. Keep text concise. No Markdown.` : "";
+      const officialInstruction = officialTarget ? `User request: ${prompt.trim()}. Use the exact AntV Infographic template "${officialTarget}" (${officialTemplateFamily(officialTarget)} family). ${referenceData ? "Revise the complete current data in Note content. Keep every unrequested subject, aspect, and value unchanged. Preserve its structure and update the title when a named subject changes." : `Create new data with this shape: ${JSON.stringify(sampleOfficialData(officialTarget))}.`} Return ONLY JSON with a "data" object. Binary comparisons require exactly two compares, each with matched children. Quadrants require four compares. Chart values must be finite numbers. Relation IDs must be unique and links valid. Keep text concise. No Markdown or commentary.` : "";
+      const catalogInstruction = catalogAvailable ? `User request: ${prompt.trim()}. Choose one AntV Infographic template from: ${catalogCandidates.join(", ")}. ${referenceData ? "Use the complete current infographic in Note content. Preserve its subjects and details unless the request changes them. If the family changes, reshape the data while retaining the information." : "Create new content."} Return ONLY JSON: {"template":"one exact candidate ID","data":{...}}. Data shape example: ${JSON.stringify(sampleOfficialData(catalogCandidates[0]))}. Binary comparisons need two compares with matched children; quadrants and SWOT need four compares. Chart values must be finite numbers. Keep text concise. No Markdown.` : "";
       await api.streamAiGeneration({
         action: "custom", title: "", contentMarkdown: referenceContent, stream: true, attachments: [], locale: i18n.resolvedLanguage,
         instruction: (officialTarget ? officialInstruction : catalogAvailable ? catalogInstruction : `${currentContent ? `Revise this existing infographic content according to the user request. Keep details and template the user did not ask to change. Current content: ${currentContent}\n` : "Create a new infographic for the user request. Choose its structure based on the new request, independently of any previous infographic.\n"}User request: ${prompt.trim()}\nReturn ONLY one valid JSON object, with keys: "kind", "template", "title", "description", "items". "kind" must be one of "steps", "list", "timeline", "comparison", "quadrant".${requestedKind ? ` The requested kind is "${requestedKind}"; use it.` : " Choose the best kind for this request."} Select "template" from these built-in AntV templates, matching its kind and the user's intent: ${infographicTemplatePrompt()}. Use a shorter layout for few items and a denser layout for many items. "items" must be a JSON array of objects; each object must have "label" and "description" strings. For "quadrant", return exactly four items. For "comparison", return exactly two items, one per thing being compared. Each comparison item must have a short description and a "children" array of two or three matched comparison aspects; each child needs a short "label" and "description". Keep every comparison description under 24 Chinese characters (or 48 Latin letters) so it fits a card. If the request has no detailed data, invent a useful, clearly generic example. Use the request's language. Do not return AntV syntax, Markdown fences, explanations, or comments.`).slice(0, 2000),
@@ -460,7 +480,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
           <textarea id="infographic-prompt" maxLength={1000} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" placeholder={t(syntax.trim() ? "infographic.refinePrompt" : "infographic.prompt")} value={prompt} onChange={(event) => { setPrompt(event.target.value); setFamilyChoice(null); }} />
           {familyChoice?.prompt === prompt.trim() && <div className="mt-3 rounded-lg border border-emerald-200 bg-white p-3">
             <p className="mb-2 text-sm font-medium text-slate-800">{t("infographic.chooseCategory")}</p>
-            <div className="flex flex-wrap gap-2">{familyChoice.options.map((family) => <Button key={family} size="sm" variant="outline" disabled={generating} onClick={() => void generate(family)}>{t(`infographic.${family}Category`)}</Button>)}</div>
+            <div className="flex flex-wrap gap-2">{familyChoice.options.map((family) => <Button key={family} size="sm" variant="outline" disabled={generating} onClick={() => void generate(family)}>{family === "keep" ? t("infographic.keepCategory") : t(`infographic.${family}Category`)}</Button>)}</div>
           </div>}
           <div className="mt-2 flex flex-wrap items-center gap-2"><Button size="sm" disabled={!prompt.trim() || generating || Boolean(familyChoice)} onClick={() => void generate()}>{generating ? <LoaderCircle className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}{generating ? t("infographic.generating") : t(syntax.trim() ? "infographic.applyRefinement" : "infographic.generate")}</Button>
             {previousGeneration && <Button size="sm" variant="outline" onClick={undoGeneration}><Undo2 className="mr-1 h-4 w-4" />{t("infographic.undoGeneration")}</Button>}
