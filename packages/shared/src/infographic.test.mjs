@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createDefaultDiagramDocument, parseDiagramDocument, serializeDiagramDocument } from "./diagram.ts";
 import {
   createDefaultInfographicDocument,
   getInfographicSummary,
@@ -22,5 +23,14 @@ describe("infographic note format", () => {
     expect(parseInfographicDocument(serializeInfographicDocument(createDefaultInfographicDocument()))).toEqual(createDefaultInfographicDocument());
     expect(parseInfographicDocument("<!-- edgeever-infographic-v1:broken -->")).toBeNull();
     expect(getInfographicSummary("regular note")).toEqual({ infographic: false });
+  });
+
+  test("infographic syntax and visual diagram IR keep separate envelopes", () => {
+    const infographic = serializeInfographicDocument({ schemaVersion: 1, syntax: "infographic sequence-steps-simple\ndata\n  sequences\n    - label 开始" });
+    const diagram = serializeDiagramDocument(createDefaultDiagramDocument("flowchart"));
+    expect(parseInfographicDocument(infographic)?.syntax).toContain("sequence-steps-simple");
+    expect(parseDiagramDocument(infographic)).toBeNull();
+    expect(parseDiagramDocument(diagram)?.kind).toBe("flowchart");
+    expect(parseInfographicDocument(diagram)).toBeNull();
   });
 });

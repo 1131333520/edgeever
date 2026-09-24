@@ -20,6 +20,14 @@ The persisted document uses `schemaVersion` to distinguish formats: `1` for mind
 
 MCP and the compile path use a separate semantic graph without coordinates. The server then generates sizes, coordinates, and edge identities into the persisted document. The agent protocol does not carry X6 or canvas state.
 
+## Boundary with infographic notes
+
+An infographic is a separate note type, outside `DiagramIr` and `DiagramDocument`. Its native source is AntV Infographic's declarative syntax, wrapped in an independent `InfographicDocument` and stored in an `edgeever-infographic-v1` Markdown comment. `schemaVersion` versions EdgeEver's envelope, not the Infographic template or syntax. The syntax already expresses template, theme, and data, so EdgeEver does not duplicate it in a generic visual IR.
+
+Mind maps, flowcharts, and architecture diagrams therefore keep EdgeEver's semantic IR as their source of truth and use X6 for drawing and editing. Infographics drive the AntV Infographic renderer directly from their syntax. Separate parsers identify the two envelopes; neither note type should parse or save the other's document. AI changes to visual diagrams operate on the semantic graph, while AI generation or changes to infographics choose an AntV template and produce matching data.
+
+If a visual diagram later needs an Infographic presentation, add an explicit `DiagramIr → Infographic` projection and document which nodes, edges, coordinates, or authored layout cannot be preserved. That projection must not become the diagram note's source of truth in reverse. Existing notes should not be migrated automatically without a validated bidirectional semantic mapping.
+
 ## IR and rendering-engine decoupling
 
 One of the IR's central benefits is preserving EdgeEver's freedom to choose its underlying rendering engines. The IR answers “what does this diagram mean?”, while an adapter answers “how does this engine draw it?”:

@@ -20,6 +20,14 @@ IR（Intermediate Representation，中间表示）是图表的结构化事实来
 
 MCP 与编译路径另有一层不含坐标的语义图；服务端再生成尺寸、坐标和连线标识，写入持久化文档。Agent 协议不携带 X6 或画布状态。
 
+## 与信息图笔记的边界
+
+信息图是另一种笔记类型，不属于上述 `DiagramIr` / `DiagramDocument`。它以 AntV Infographic 的声明式语法作为原生源文件，包在独立的 `InfographicDocument` 中，并用 `edgeever-infographic-v1` Markdown 注释保存。`schemaVersion` 管理 EdgeEver 的信封格式；它不表示 Infographic 模板或语法版本。信息图的模板、主题和数据由该语法表达，EdgeEver 不再复制一份同义的通用图形 IR。
+
+因此，思维导图、流程图、架构图仍以 EdgeEver 的语义 IR 为事实来源，经 X6 绘制和编辑；信息图由 AntV Infographic 语法直接驱动其渲染器。两种信封由各自的解析器识别，不能把另一种笔记的内容当成自己的文档解析或保存。AI 修改图形笔记应改语义图，AI 生成或修改信息图则选择 AntV 模板并生成相应数据。
+
+如果将来需要用 Infographic 呈现某张图形笔记，应添加明确的 `DiagramIr → Infographic` 投影，并说明哪些节点、连线、坐标或手工布局无法保留。该投影不能反向成为图形笔记的事实来源；在有经过验证的双向语义映射之前，不自动迁移已有笔记。
+
 ## IR 与绘图引擎解耦
 
 IR 的核心价值之一，是让 EdgeEver 保留对底层绘图引擎的选择权。IR 负责回答“这张图表达什么”，适配器负责回答“当前引擎如何把它画出来”：

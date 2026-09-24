@@ -6,6 +6,7 @@ const COMMENT = /<!--\s*edgeever-infographic-v1:([A-Za-z0-9_-]+)\s*-->/;
 
 export type InfographicDocument = {
   schemaVersion: typeof INFOGRAPHIC_SCHEMA_VERSION;
+  // AntV Infographic's native source, separate from the visual diagram IR.
   syntax: string;
 };
 
