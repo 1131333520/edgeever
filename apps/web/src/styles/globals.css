@@ -837,10 +837,12 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   color: hsl(var(--foreground));
 }
 
-button,
-input,
-textarea {
-  font: inherit;
+@layer base {
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
 }
 
 .ProseMirror {
