@@ -478,7 +478,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
           </div>
         </div>}
       </section>
-      <section className="min-h-0 overflow-auto bg-slate-50 p-4"><div className="min-h-[420px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div ref={containerRef} className="min-h-[380px] w-full" />{!syntax.trim() && <p className="pt-32 text-center text-sm text-slate-400">{t("infographic.noPreview")}</p>}{renderError && <p role="alert" className="text-sm text-red-600">{renderError}</p>}</div></section>
+      <section className="min-h-0 overflow-auto bg-slate-50 p-4"><div className="min-h-[420px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div ref={containerRef} className="edgeever-infographic-preview min-h-[380px] w-full" />{!syntax.trim() && <p className="pt-32 text-center text-sm text-slate-400">{t("infographic.noPreview")}</p>}{renderError && <p role="alert" className="text-sm text-red-600">{renderError}</p>}</div></section>
     </div>
   </div>;
 }
