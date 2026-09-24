@@ -132,7 +132,7 @@ import {
   createMemoLinkHref,
   parseMemoLinkHref,
 } from "@edgeever/shared";
-import { DEFAULT_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
+import { NEW_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
 import { EdgeEverLink } from "@edgeever/shared/editor-link";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { codeBlockLowlight, EdgeEverCodeBlock } from "@/lib/code-block";
@@ -1003,7 +1003,7 @@ const RichEditorPane = ({
               src: resource.url,
               alt: file.name,
               title: file.name,
-              width: DEFAULT_IMAGE_WIDTH_PERCENT,
+              width: NEW_IMAGE_WIDTH_PERCENT,
             },
           };
         }
