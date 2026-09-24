@@ -598,7 +598,7 @@ const result = await context.ai.generate({
 });
 ```
 
-`system` is limited to 8,000 characters, `prompt` to 90,000, output to 5,000 tokens, and generation to 120 seconds. The backend requires an interactive user session, disables AI in public demo mode, and redacts provider errors. AI calls have a four-request per-workspace guard in each backend instance; this is not a distributed quota. Model charges follow the configured provider. Plugin deactivation aborts outstanding calls.
+`system` is limited to 8,000 characters, `prompt` to 90,000, and requested output to 32,768 tokens; omitted `maxOutputTokens` defaults to 3,000. Generation is limited to 120 seconds. The model or provider may impose a lower limit or reject a request based on available credits. The backend requires an interactive user session, disables AI in public demo mode, and redacts provider errors. AI calls have a four-request per-workspace guard in each backend instance; this is not a distributed quota. Model charges follow the configured provider. Plugin deactivation aborts outstanding calls.
 
 The default `network.fetch(url, init)` transport is a trusted browser request. It accepts arbitrary HTTP/HTTPS destinations, methods, bodies, request headers such as `Authorization`, and the requested browser credential mode. It remains subject to the runtime browser's CORS and cookie policy. `networkHosts` is legacy descriptive metadata and is not a security boundary. To read a cross-origin public feed or API without credentials, explicitly select `transport: "public"`; listing `network` and `network:public` remains useful disclosure but is optional.
 
