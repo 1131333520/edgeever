@@ -1,16 +1,27 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { MOBILE_UI_METRICS } from "../../../../packages/shared/src/mobile-ui.ts";
 
 describe("tailwind theme tokens", () => {
-  test("web PostCSS loads the web Tailwind config that paints with CSS variables", () => {
-    const postcss = readFileSync(new URL("../../postcss.config.js", import.meta.url), "utf8");
-    const tailwind = readFileSync(new URL("../../tailwind.config.ts", import.meta.url), "utf8");
+  test("web uses Tailwind 4 CSS tokens backed by the existing runtime palette", () => {
+    const vite = readFileSync(new URL("../../vite.config.ts", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 
-    expect(postcss).toContain('path.join(configDirectory, "tailwind.config.ts")');
-    expect(tailwind).toContain("rgb(var(--slate-${shade}-rgb) / <alpha-value>)");
-    expect(tailwind).toContain("rgb(var(--brand-green-${shade}-rgb) / <alpha-value>)");
-    expect(tailwind).toContain("rgb(var(--amber-50-rgb) / <alpha-value>)");
-    expect(tailwind).toContain("rgb(var(--rose-50-rgb) / <alpha-value>)");
-    expect(tailwind).toContain("950: slate(950)");
+    expect(vite).toContain('import tailwindcss from "@tailwindcss/vite"');
+    expect(css).toContain('@import "tailwindcss"');
+    expect(css).toContain('@custom-variant dark (&:where(.dark, .dark *))');
+    expect(css).toContain("--color-slate-950: rgb(var(--slate-950-rgb) / 1)");
+    expect(css).toContain("--color-emerald-500: rgb(var(--brand-green-500-rgb) / 1)");
+    expect(css).toContain("--color-amber-50: rgb(var(--amber-50-rgb) / 1)");
+    expect(css).toContain("--color-rose-50: rgb(var(--rose-50-rgb) / 1)");
+  });
+
+  test("mobile CSS tokens match the shared layout metrics", () => {
+    const css = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
+    expect(css).toContain(`--spacing-mobile-bottom-nav: ${MOBILE_UI_METRICS.bottomNavigationHeight}px`);
+    expect(css).toContain(`--spacing-mobile-control: ${MOBILE_UI_METRICS.compactControlHeight}px`);
+    expect(css).toContain(`--spacing-mobile-fab: ${MOBILE_UI_METRICS.floatingCreateButtonSize}px`);
+    expect(css).toContain(`--spacing-mobile-touch: ${MOBILE_UI_METRICS.minimumTouchTarget}px`);
+    expect(css).toContain(`--radius-mobile-sheet: ${MOBILE_UI_METRICS.floatingSheetCornerRadius}px`);
   });
 });
