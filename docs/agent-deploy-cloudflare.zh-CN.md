@@ -20,7 +20,7 @@
    - 配置项目使用仓库根目录、生产环境 `main` 分支，并读取仓库根目录下的 `wrangler.toml`。
 
 4. **配置登录凭据与实例参数**
-   - **Worker Secret**：添加密钥 `EDGE_EVER_AUTH_PASSWORD`，值为初始管理员登录密码；建议使用至少 32 个字符且仅用于此实例的强密码。
+   - **Worker Secret**：添加密钥 `EDGE_EVER_AUTH_PASSWORD`，值为初始管理员登录密码；建议使用至少 32 个字符的强密码。
    - 该密码只配置为 Worker 运行时 Secret，不要复制到 Workers Builds 构建变量；标准部署入口会复用并验证已存在的 Secret。
    - 不要修改 `wrangler.toml`，也不要在控制台重复添加 binding。部署命令会根据标准资源名称生成 `DB` 与 `RESOURCES` binding。
    - 对按旧版文档部署的已有 Worker，不要要求用户重命名或重新配置自定义 R2 存储桶。没有显式覆盖时，部署会自动保留线上 `RESOURCES` binding 与管理员用户名。
@@ -40,7 +40,7 @@
    - 触发启动首次构建，待构建部署完成后，进行如下自动化验证：
      - 检查 `https://<你的 Worker 域名>/api/health` 返回 `200` 状态码且 JSON 内容为 `{"ok": true}`。
      - 检查 `https://<你的 Worker 域名>/api/openapi.json` 可以访问，且 JSON 含 `"ok": true`。
-     - 使用用户名 `admin` 和 `EDGE_EVER_AUTH_PASSWORD` 验证登录 API。
+     - 使用配置的管理员用户名（默认 `admin`）和 `EDGE_EVER_AUTH_PASSWORD` 验证登录 API。
 
 7. **验证上游更新通道**
    - 在 Fork 仓库的 **Actions** 标签页中启用 **Update deployed EdgeEver**（公共 Fork 上定时任务默认关闭，必须手动启用）。

@@ -106,10 +106,12 @@ EdgeEver をオンラインで導入してください:
 1. Fork https://github.com/tianma-if/edgeever.
 2. Cloudflare で D1 `edgeever` と R2 `edgeever-resources` を作成します。
 3. その Fork を Cloudflare Workers & Pages に取り込み、`main` を本番ブランチにします。
-4. Worker Secret `EDGE_EVER_AUTH_PASSWORD` を追加し、ユーザーが選んだパスワードを値にします。
-   このインスタンス専用の、32 文字以上の強いパスワードを推奨します。
-5. 初回ビルドを開始し、`/api/health` と `/api/openapi.json` を確認してから、
-   ユーザー名 `admin` と設定したパスワードでログインできることを確認します。
+4. ユーザーが指定した管理者パスワードを Worker Secret `EDGE_EVER_AUTH_PASSWORD` に保存します。
+   パスワードは 32 文字以上を推奨します。管理者ユーザー名の既定値は `admin` です。
+   別のユーザー名を指定された場合は、初回ビルド前に Workers Builds 変数
+   `EDGE_EVER_AUTH_USERNAME` を設定します。
+5. 初回ビルドを開始します。導入後、`/api/health` と `/api/openapi.json` を確認し、
+   その管理者ユーザー名とパスワードでログインできることを確認します。
 6. GitHub Actions の `Update deployed EdgeEver` を有効にし、一度手動実行して、
    Fork が最新の機能と修正を自動で受け取れるようにします。
 ```
@@ -123,8 +125,8 @@ EdgeEver をオンラインで導入してください:
 1. **リポジトリを Fork**：GitHub 右上の **Fork** で、EdgeEver を自分のアカウントへ Fork します。
 2. **Cloudflare リソースを作成**：D1 `edgeever` と R2 `edgeever-resources` を作ります。
 3. **プロジェクトを取り込み、設定**：Fork を Cloudflare **Workers & Pages** に取り込み、`main` を本番ブランチにします。binding は導入コマンドが作ります。Fork 内のファイルは編集しないでください。
-4. **管理者パスワードを設定**：Worker Secret `EDGE_EVER_AUTH_PASSWORD` を追加し、管理者ログイン用パスワードを値にします。このインスタンス専用の、32 文字以上の強いパスワードを推奨します。
-5. **ビルドと確認**：初回ビルドを開始します。導入後、`/api/health` が `200` を返すことと、ユーザー名 `admin` と設定したパスワードでログインできることを確認します。
+4. **管理者パスワードを設定**：Worker Secret `EDGE_EVER_AUTH_PASSWORD` を追加し、管理者ログイン用パスワードを値にします。32 文字以上の強いパスワードを推奨します。
+5. **ビルドと確認**：管理者ユーザー名の既定値は `admin` です。別のユーザー名を使う場合は、初回ビルド前に Workers Builds 変数 `EDGE_EVER_AUTH_USERNAME` を設定します。初回ビルドを開始し、導入後に `/api/health` が `200` を返すことを確認してから、設定した管理者ユーザー名とパスワードでログインします。
 6. **自動更新を有効化**：Fork の **Actions** タブで **I understand my workflows, go ahead and enable them** を押し、**Update deployed EdgeEver** を一度手動実行して、以降の機能と修正を自動で受け取れるようにします。
 
 > 📖 手順と設定の詳細は [Online Deployment Guide](docs/deploy-cloudflare-button.md) を見てください。

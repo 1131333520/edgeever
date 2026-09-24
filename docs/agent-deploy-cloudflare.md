@@ -20,7 +20,7 @@ This document defines the standard operating specifications and conventions for 
    - Configure the project to use the repository root, the production `main` branch, and read the root `wrangler.toml`.
 
 4. **Configure Login Credentials & Instance Settings**
-   - **Worker Secret**: Add secret `EDGE_EVER_AUTH_PASSWORD` for the initial administrator password. Prefer a strong password of at least 32 characters that is unique to this instance.
+   - **Worker Secret**: Add secret `EDGE_EVER_AUTH_PASSWORD` for the initial administrator password. Prefer a strong password of at least 32 characters.
    - Keep this password only as a Worker runtime Secret; do not copy it into Workers Builds variables. The standard deploy entrypoint reuses and verifies the existing Secret.
    - Do not edit `wrangler.toml` or add duplicate bindings in the Dashboard. The deployment command generates the `DB` and `RESOURCES` bindings from these standard resource names.
    - For an existing Worker deployed from older instructions, do not ask the user to rename or reconfigure a custom R2 bucket. With no explicit override, deployment automatically preserves the live `RESOURCES` binding and administrator username.
@@ -40,7 +40,7 @@ This document defines the standard operating specifications and conventions for 
    - Trigger the initial build. Once deployed, run the following automated verifications:
      - Check `https://<your-worker-domain>/api/health` returns HTTP `200` with JSON `{"ok": true}`.
      - Check `https://<your-worker-domain>/api/openapi.json` is reachable and returns JSON `{"ok": true}`.
-     - Verify login API using username `admin` and `EDGE_EVER_AUTH_PASSWORD`.
+     - Verify login API using the configured administrator username (default: `admin`) and `EDGE_EVER_AUTH_PASSWORD`.
 
 7. **Verify Upstream Update Channel**
    - In the Fork's **Actions** tab, enable **Update deployed EdgeEver** (required on public forks: scheduled workflows are disabled by default).

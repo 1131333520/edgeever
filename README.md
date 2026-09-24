@@ -107,11 +107,12 @@ Deploy EdgeEver online:
 2. Create D1 `edgeever` and R2 `edgeever-resources` in Cloudflare.
 3. Import the Fork into Cloudflare Workers & Pages and use `main` as the production
    branch.
-4. Add a Worker Secret named `EDGE_EVER_AUTH_PASSWORD`, using a password chosen by the
-   user as its value. Prefer a strong password of at least 32 characters that is unique
-   to this instance.
-5. Start the first build, verify `/api/health` and `/api/openapi.json`, then verify login
-   with username `admin` and the configured password.
+4. Save the user's chosen administrator password as the Worker Secret
+   `EDGE_EVER_AUTH_PASSWORD`. Prefer at least 32 characters.
+   The administrator username defaults to `admin`. If the user specifies another, set
+   `EDGE_EVER_AUTH_USERNAME` as a Workers Builds variable before the first build.
+5. Start the first build. Once deployed, verify `/api/health` and `/api/openapi.json`.
+   Then log in with that administrator username and password.
 6. Enable and manually run the GitHub Actions workflow named `Update deployed EdgeEver`
    once so the Fork can automatically receive the latest EdgeEver features and fixes.
 ```
@@ -125,8 +126,8 @@ Complete setup in 6 web steps:
 1. **Fork the Repository**: Click **Fork** at the top right of GitHub to fork EdgeEver into your personal account.
 2. **Create Cloudflare Resources**: Create D1 `edgeever` and R2 `edgeever-resources`.
 3. **Import & Configure the Project**: Import the Fork into Cloudflare **Workers & Pages** and use `main` as the production branch. The deploy command creates the bindings; do not edit Fork files.
-4. **Set the Administrator Password**: Add a Worker Secret named `EDGE_EVER_AUTH_PASSWORD` and set its value to your chosen administrator login password. Prefer a strong password of at least 32 characters that is unique to this instance.
-5. **Build & Verify**: Start the initial build. Once deployed, confirm `/api/health` returns `200`, then verify login with username `admin` and the configured password.
+4. **Set the Administrator Password**: Add a Worker Secret named `EDGE_EVER_AUTH_PASSWORD` and set its value to your chosen administrator login password. Prefer a strong password of at least 32 characters.
+5. **Build & Verify**: The administrator username defaults to `admin`. To use another username, set the `EDGE_EVER_AUTH_USERNAME` Workers Builds variable before the first build. Start the first build. Once deployed, confirm `/api/health` returns `200`, then log in with the administrator username and password you configured.
 6. **Enable Automatic Updates**: Open the Fork's **Actions** tab, click **I understand my workflows, go ahead and enable them**, then manually run **Update deployed EdgeEver** once so the Fork can automatically receive future EdgeEver features and fixes.
 
 > 📖 For full step-by-step instructions and configuration details, see the [Online Deployment Guide](docs/deploy-cloudflare-button.md).
