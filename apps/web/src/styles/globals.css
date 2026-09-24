@@ -7,6 +7,11 @@
 @tailwind components;
 @tailwind utilities;
 
+.edgeever-infographic-selected-text {
+  outline: 2px solid #3384f5;
+  outline-offset: 2px;
+}
+
 @keyframes edgeever-token-created {
   0% {
     opacity: 0;

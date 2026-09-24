@@ -180,7 +180,6 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
   const [error, setError] = useState<string | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
-  const [directEditAvailable, setDirectEditAvailable] = useState(false);
   const [ready, setReady] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify([memo.title ?? "", parsed?.syntax ?? ""]));
   const containerRef = useRef<HTMLDivElement>(null);
@@ -211,26 +210,64 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
 
   useEffect(() => {
     setPreviewReady(false);
-    if (!syntax.trim()) { instanceRef.current?.destroy(); instanceRef.current = null; setRenderError(null); setDirectEditAvailable(false); return; }
+    if (!syntax.trim()) { instanceRef.current?.destroy(); instanceRef.current = null; setRenderError(null); return; }
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      void import("@antv/infographic").then(({ Infographic, DblClickEditText, parseSyntax, getTemplate }) => {
+      void import("@antv/infographic").then(({ Infographic, Interaction, DblClickEditText, SelectHighlight, parseSyntax, getTemplate }) => {
         if (cancelled || !containerRef.current) return;
         const parsedSyntax = parseSyntax(syntax);
         if (parsedSyntax.errors.length || !parsedSyntax.options.template || !getTemplate(parsedSyntax.options.template)) {
           setRenderError(parsedSyntax.errors[0]?.message ?? t("infographic.invalidSyntax"));
-          setDirectEditAvailable(false);
           instanceRef.current?.destroy(); instanceRef.current = null;
           return;
         }
         try {
           instanceRef.current?.destroy();
           const visualTextEditable = !readOnly && Boolean(parseSimpleForm(syntax) || editableOfficialData(syntax, parsedSyntax));
-          setDirectEditAvailable(visualTextEditable);
+          class SelectGraphicElement extends Interaction {
+            name = "select-graphic-element";
+            private svg: SVGSVGElement | null = null;
+            private handleClick = (event: MouseEvent) => {
+              if (!(event.target instanceof Element)) return;
+              if (event.target.closest('[contenteditable="true"]')) return;
+              const text = event.target.closest('foreignObject[data-element-type="title"], foreignObject[data-element-type="desc"], foreignObject[data-element-type="item-label"], foreignObject[data-element-type="item-desc"]');
+              const shape = event.target.closest('[data-element-type="shape"], [data-element-type="item-icon"], [data-element-type="edit-area"]');
+              let target = text ?? shape ?? event.target.closest("rect, ellipse, circle, path, polygon, polyline, line, image, text");
+              if (shape?.getAttribute("data-element-type") === "shape") {
+                let group = shape.parentElement;
+                while (group && group.parentElement?.getAttribute("data-element-type") !== "items-group") group = group.parentElement;
+                if (group) target = group;
+              }
+              if (target) this.interaction.select([target as Parameters<typeof this.interaction.select>[0][number]], event.shiftKey ? "toggle" : "replace");
+              else this.interaction.clearSelection();
+            };
+            private handleKeyDown = (event: KeyboardEvent) => {
+              if (event.key === "Escape") this.interaction.clearSelection();
+            };
+            override init(options: Parameters<(typeof DblClickEditText)["prototype"]["init"]>[0]) {
+              super.init(options);
+              const svg = options.editor.getDocument();
+              this.svg = svg;
+              svg.addEventListener("click", this.handleClick);
+              document.addEventListener("keydown", this.handleKeyDown);
+            }
+            override destroy() {
+              this.svg?.removeEventListener("click", this.handleClick);
+              document.removeEventListener("keydown", this.handleKeyDown);
+            }
+          }
           const instance = new Infographic({
             container: containerRef.current, width: "100%", height: "100%",
             editable: visualTextEditable,
-            ...(visualTextEditable ? { interactions: [new DblClickEditText()], plugins: [] } : {}),
+            ...(visualTextEditable ? { interactions: [new SelectGraphicElement(), new DblClickEditText(), new SelectHighlight()], plugins: [] } : {}),
+          });
+          if (visualTextEditable) instance.on("selection:change", ({ previous, next }: { previous: Element[]; next: Element[] }) => {
+            for (const element of previous) element.classList.remove("edgeever-infographic-selected-text");
+            for (const element of next) {
+              if (["title", "desc", "item-label", "item-desc"].includes((element as HTMLElement).dataset.elementType ?? "")) {
+                element.classList.add("edgeever-infographic-selected-text");
+              }
+            }
           });
           if (visualTextEditable) instance.on("options:change", (payload: VisualTextChange) => {
             const nextSyntax = applyVisualTextChange(syntax, payload) ?? applyOfficialVisualTextChange(syntax, payload, parsedSyntax);
@@ -379,7 +416,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
           </div>
         </div>}
       </section>
-      <section className="min-h-0 overflow-auto bg-slate-50 p-4"><h2 className="mb-1 text-sm font-medium text-slate-600">{t("infographic.preview")}</h2>{directEditAvailable && <p className="mb-3 text-xs text-slate-500">{t("infographic.doubleClickText")}</p>}<div className="min-h-[420px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div ref={containerRef} className="min-h-[380px] w-full" />{!syntax.trim() && <p className="pt-32 text-center text-sm text-slate-400">{t("infographic.noPreview")}</p>}{renderError && <p role="alert" className="text-sm text-red-600">{renderError}</p>}</div></section>
+      <section className="min-h-0 overflow-auto bg-slate-50 p-4"><div className="min-h-[420px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div ref={containerRef} className="min-h-[380px] w-full" />{!syntax.trim() && <p className="pt-32 text-center text-sm text-slate-400">{t("infographic.noPreview")}</p>}{renderError && <p role="alert" className="text-sm text-red-600">{renderError}</p>}</div></section>
     </div>
   </div>;
 }
