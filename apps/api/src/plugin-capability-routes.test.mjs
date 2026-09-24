@@ -68,16 +68,18 @@ test('generic AI validates ordinary prompts, returns text, and redacts provider 
   const response = await failed('ai/generate', { system: '', prompt: 'hello' }); expect(response.status).toBe(502); expect(await response.text()).not.toContain('dummy-provider-secret');
 });
 
-test('generic AI accepts the larger output ceiling and rejects requests above it', async () => {
+test('generic AI leaves output limits to the provider while requiring a positive integer', async () => {
   const call = fixture({
     generate: async input => ({ text: String(input.maxOutputTokens) }),
     loadCredentials: async () => ({ provider: 'openai-compatible', baseUrl: 'https://api.example/v1', apiKey: 'plugin-key', modelId: 'model-a' }),
   });
-  const input = { system: '', prompt: 'hello', maxOutputTokens: 32768 };
-  expect(await (await call('ai/generate', input)).json()).toEqual({ text: '32768' });
+  const input = { system: '', prompt: 'hello', maxOutputTokens: 1000000 };
+  expect(await (await call('ai/generate', input)).json()).toEqual({ text: '1000000' });
   expect((await call('ai/generate/prepare', input)).status).toBe(200);
-  expect((await call('ai/generate', { ...input, maxOutputTokens: 32769 })).status).toBe(400);
-  expect((await call('ai/generate/prepare', { ...input, maxOutputTokens: 32769 })).status).toBe(400);
+  for (const maxOutputTokens of [0, -1, 1.5, '100']) {
+    expect((await call('ai/generate', { ...input, maxOutputTokens })).status).toBe(400);
+    expect((await call('ai/generate/prepare', { ...input, maxOutputTokens })).status).toBe(400);
+  }
 });
 
 test('concurrent requests are bounded and released after completion', async () => {
