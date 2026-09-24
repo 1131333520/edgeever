@@ -25,6 +25,19 @@ describe("infographic note format", () => {
     expect(getInfographicSummary("regular note")).toEqual({ infographic: false });
   });
 
+  test("keeps AI revision requests with the infographic across reads", () => {
+    const document = {
+      schemaVersion: 1,
+      syntax: "infographic sequence-steps-simple\ndata\n  title 发布流程",
+      history: [
+        { id: "one", prompt: "做一个发布流程图", createdAt: "2026-09-24T10:00:00.000Z", kind: "generated", resultTitle: "发布流程" },
+        { id: "two", prompt: "把第二步改成审核", createdAt: "2026-09-24T10:01:00.000Z", kind: "refined", resultTitle: "发布流程", undoneAt: "2026-09-24T10:02:00.000Z" },
+      ],
+    };
+    expect(parseInfographicDocument(serializeInfographicDocument(document))).toEqual(document);
+    expect(parseInfographicDocument(serializeInfographicDocument({ ...document, history: [{ ...document.history[0], prompt: 42 }] }))).toBeNull();
+  });
+
   test("infographic syntax and visual diagram IR keep separate envelopes", () => {
     const infographic = serializeInfographicDocument({ schemaVersion: 1, syntax: "infographic sequence-steps-simple\ndata\n  sequences\n    - label 开始" });
     const diagram = serializeDiagramDocument(createDefaultDiagramDocument("flowchart"));

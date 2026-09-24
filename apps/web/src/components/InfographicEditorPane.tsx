@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Download, LoaderCircle, Presentation, Sparkles, Undo2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { markdownToDoc, infographicFallbackMarkdown, parseInfographicDocument, serializeInfographicDocument, type InfographicDocument, type MemoDetail, type MemoEditSession } from "@edgeever/shared";
+import { markdownToDoc, infographicFallbackMarkdown, parseInfographicDocument, serializeInfographicDocument, type InfographicConversationTurn, type InfographicDocument, type MemoDetail, type MemoEditSession } from "@edgeever/shared";
 import type { Infographic as InfographicInstance, SyntaxParseResult } from "@antv/infographic";
 import { Button } from "@/components/ui/button";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
@@ -173,26 +173,34 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
   const parsed = useMemo(() => parseInfographicDocument(memo.contentMarkdown), [memo.contentMarkdown]);
   const [title, setTitle] = useState(memo.title ?? "");
   const [syntax, setSyntax] = useState(parsed?.syntax ?? "");
+  const [history, setHistory] = useState<InfographicConversationTurn[]>(parsed?.history ?? []);
   const [prompt, setPrompt] = useState("");
-  const [previousGeneration, setPreviousGeneration] = useState<{ title: string; syntax: string } | null>(null);
+  const [previousGeneration, setPreviousGeneration] = useState<{ title: string; syntax: string; turnId: string } | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [ready, setReady] = useState(false);
-  const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify([memo.title ?? "", parsed?.syntax ?? ""]));
+  const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify([memo.title ?? "", parsed?.syntax ?? "", parsed?.history ?? []]));
+  const [savedHistorySnapshot, setSavedHistorySnapshot] = useState(JSON.stringify(parsed?.history ?? []));
   const containerRef = useRef<HTMLDivElement>(null);
+  const historyViewportRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<InfographicInstance | null>(null);
   const sessionRef = useRef<MemoEditSession | null>(null);
   const memoRef = useRef(memo);
   const saveRef = useRef<() => void>(() => undefined);
-  const snapshot = JSON.stringify([title, syntax]);
+  const snapshot = JSON.stringify([title, syntax, history]);
   const dirty = snapshot !== savedSnapshot;
+  const historyDirty = JSON.stringify(history) !== savedHistorySnapshot;
 
   useEffect(() => {
     memoRef.current = memo;
   }, [memo]);
+
+  useEffect(() => {
+    if (historyViewportRef.current) historyViewportRef.current.scrollTop = historyViewportRef.current.scrollHeight;
+  }, [history]);
 
   useEffect(() => {
     if (readOnly) return;
@@ -295,6 +303,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
     if (!previousGeneration) return;
     setSyntax(previousGeneration.syntax);
     setTitle(previousGeneration.title);
+    setHistory((turns) => turns.map((turn) => turn.id === previousGeneration.turnId ? { ...turn, undoneAt: new Date().toISOString() } : turn));
     setPreviousGeneration(null);
     setError(null);
   };
@@ -307,7 +316,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
     }
     const currentMemo = memoRef.current;
     const currentSnapshot = snapshot;
-    const document: InfographicDocument = { schemaVersion: 1, syntax };
+    const document: InfographicDocument = { schemaVersion: 1, syntax, ...(history.length ? { history } : {}) };
     setSaving(true); setError(null);
     try {
       const result = await repository.updateMemo(currentMemo, {
@@ -321,6 +330,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
       });
       memoRef.current = result.memo;
       setSavedSnapshot(currentSnapshot);
+      setSavedHistorySnapshot(JSON.stringify(history));
       await onSaved(result.memo);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t("infographic.saveError"));
@@ -330,9 +340,9 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
 
   useEffect(() => {
     if (!dirty || !ready || readOnly || saving || generating || renderError || (syntax.trim() && !previewReady)) return;
-    const timer = window.setTimeout(() => saveRef.current(), 1200);
+    const timer = window.setTimeout(() => saveRef.current(), historyDirty ? 0 : 1200);
     return () => window.clearTimeout(timer);
-  }, [dirty, ready, readOnly, saving, generating, renderError, previewReady, snapshot, syntax]);
+  }, [dirty, ready, readOnly, saving, generating, renderError, previewReady, snapshot, syntax, historyDirty]);
 
   const generate = async () => {
     if (!prompt.trim() || generating || readOnly) return;
@@ -379,9 +389,14 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
       if (parsedCandidate.errors.length || !parsedCandidate.options.template || !getTemplate(parsedCandidate.options.template)) {
         throw new Error(t("infographic.aiInvalidResponse"));
       }
-      setPreviousGeneration({ title, syntax });
-      setSyntax(candidate);
       const generatedTitle = selectedOfficial ? String(selectedOfficial.data.title ?? "") : content!.title;
+      const turnId = crypto.randomUUID();
+      setPreviousGeneration({ title, syntax, turnId });
+      setHistory((turns) => [...turns, {
+        id: turnId, prompt: prompt.trim(), createdAt: new Date().toISOString(),
+        kind: syntax.trim() ? "refined" : "generated", resultTitle: generatedTitle,
+      }]);
+      setSyntax(candidate);
       if (!title.trim() || title.trim() === t("infographic.name") || (replaceExisting && title.trim() === currentForm?.heading)) setTitle(generatedTitle);
       setPrompt("");
     } catch (caught) { setError(caught instanceof Error ? caught.message : t("infographic.aiError")); }
@@ -407,8 +422,23 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
     </header>
     {error ? <p role="alert" className="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-700">{error}</p> : null}
     <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(300px,34%)_1fr]">
-      <section className="min-h-0 overflow-y-auto border-b border-slate-200 p-5 lg:border-b-0 lg:border-r">
-        {!readOnly && <div className="mb-5 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+      <section className="flex min-h-[320px] max-h-[60vh] flex-col border-b border-slate-200 p-5 lg:min-h-0 lg:max-h-none lg:border-b-0 lg:border-r">
+        <div ref={historyViewportRef} className="min-h-0 flex-1 overflow-y-auto" role="log" aria-label={t("infographic.historyTitle")}>
+          {history.length > 0 && <div className="pb-5">
+            <h2 className="mb-3 text-sm font-semibold text-slate-800">{t("infographic.historyTitle")}</h2>
+            <ol className="space-y-4">
+              {history.map((turn) => <li key={turn.id} className="space-y-2 text-sm">
+                <div className="flex justify-end"><div className="max-w-[92%] rounded-xl bg-emerald-50 px-3 py-2 text-slate-800 whitespace-pre-wrap break-words">{turn.prompt}</div></div>
+                <div className="max-w-[92%] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700">
+                  <p>{t(turn.kind === "generated" ? "infographic.historyGenerated" : "infographic.historyRefined", { title: turn.resultTitle || t("infographic.name") })}</p>
+                  {turn.undoneAt && <p className="mt-1 text-xs text-slate-500">{t("infographic.historyUndone")}</p>}
+                  <time className="mt-1 block text-xs text-slate-500" dateTime={turn.createdAt}>{new Date(turn.createdAt).toLocaleString(i18n.resolvedLanguage)}</time>
+                </div>
+              </li>)}
+            </ol>
+          </div>}
+        </div>
+        {!readOnly && <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
           <label className="mb-2 block text-sm font-medium text-slate-800" htmlFor="infographic-prompt"><Sparkles className="mr-1 inline h-4 w-4 text-emerald-700" />{t(syntax.trim() ? "infographic.refine" : "infographic.describe")}</label>
           <textarea id="infographic-prompt" maxLength={1000} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" placeholder={t(syntax.trim() ? "infographic.refinePrompt" : "infographic.prompt")} value={prompt} onChange={(event) => setPrompt(event.target.value)} />
           <div className="mt-2 flex flex-wrap items-center gap-2"><Button size="sm" disabled={!prompt.trim() || generating} onClick={() => void generate()}>{generating ? <LoaderCircle className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}{generating ? t("infographic.generating") : t(syntax.trim() ? "infographic.applyRefinement" : "infographic.generate")}</Button>

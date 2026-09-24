@@ -8,6 +8,16 @@ export type InfographicDocument = {
   schemaVersion: typeof INFOGRAPHIC_SCHEMA_VERSION;
   // AntV Infographic's native source, separate from the visual diagram IR.
   syntax: string;
+  history?: InfographicConversationTurn[];
+};
+
+export type InfographicConversationTurn = {
+  id: string;
+  prompt: string;
+  createdAt: string;
+  kind: "generated" | "refined";
+  resultTitle: string;
+  undoneAt?: string;
 };
 
 export const createDefaultInfographicDocument = (): InfographicDocument => ({
@@ -38,7 +48,15 @@ export const parseInfographicDocument = (markdown: string | null | undefined): I
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
     const document = value as Record<string, unknown>;
     if (document.schemaVersion !== INFOGRAPHIC_SCHEMA_VERSION || typeof document.syntax !== "string" || document.syntax.length > 200_000) return null;
-    return { schemaVersion: INFOGRAPHIC_SCHEMA_VERSION, syntax: document.syntax };
+    const history = document.history;
+    if (history !== undefined && (!Array.isArray(history) || !history.every((turn: unknown) => {
+      if (!turn || typeof turn !== "object" || Array.isArray(turn)) return false;
+      const value = turn as Record<string, unknown>;
+      return typeof value.id === "string" && typeof value.prompt === "string" && value.prompt.length <= 1000
+        && typeof value.createdAt === "string" && (value.kind === "generated" || value.kind === "refined")
+        && typeof value.resultTitle === "string" && (value.undoneAt === undefined || typeof value.undoneAt === "string");
+    }))) return null;
+    return { schemaVersion: INFOGRAPHIC_SCHEMA_VERSION, syntax: document.syntax, ...(history ? { history: history as InfographicConversationTurn[] } : {}) };
   } catch {
     return null;
   }

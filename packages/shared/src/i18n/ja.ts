@@ -6,6 +6,7 @@ export const ja = {
     name: "インフォグラフィック", autoLayout: "自動配置", describe: "説明して生成", chooseTemplate: "テンプレートを選んで入力",
     prompt: "表示したい情報、構成、要点を説明してください", generate: "インフォグラフィックを生成", generating: "生成中…",
     refine: "変更したい点を説明", refinePrompt: "例：2 番目の項目をユーザー成長に変更", applyRefinement: "AI で修正", undoGeneration: "前回の生成を元に戻す", fineTune: "手動で微調整",
+    historyTitle: "AI の対話履歴", historyGenerated: "「{{title}}」を生成しました", historyRefined: "「{{title}}」を修正しました", historyUndone: "この変更は取り消されました",
     doubleClickText: "図内の文字をダブルクリックして編集できます。変更は自動保存されます。",
     structureSettings: "構成とスタイル · 一括編集", editSyntax: "元の構文を編集", backToStructure: "構成とスタイルに戻る",
     title: "タイトル", description: "説明", items: "項目（1 行に 1 件、「タイトル | 説明」）", comparisonItems: "比較する 2 者を各 1 行にし、観点は「- 項目 | 説明」で追加", template: "テンプレート", theme: "配色",
