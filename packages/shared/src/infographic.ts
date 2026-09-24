@@ -44,6 +44,14 @@ export type InfographicAgentEvent =
   | { type: "finish" }
   | { type: "error"; message: string };
 
+// Only force a timeline for a clear request to replace the graphic's subject/structure.
+// Mentioning a timeline in a comparison or asking to edit its label is insufficient.
+export const infographicRequestsTimeline = (prompt: string) => {
+  if (!/(发展历程|发展史|历史沿革|成长历程|时间线|时间轴|里程碑|timeline|chronolog)/i.test(prompt)) return false;
+  if (/(对比|比较|差异|\bvs\b|补充|增加|添加|加上|加入|标题|文案|文字|不要|别|无需)/i.test(prompt)) return false;
+  return /(?:换成|改成|改为|做成|生成|展示|画|制作|呈现|按时间顺序)/i.test(prompt) || prompt.trim().length <= 24;
+};
+
 export const createDefaultInfographicDocument = (): InfographicDocument => ({
   schemaVersion: INFOGRAPHIC_SCHEMA_VERSION,
   syntax: "",

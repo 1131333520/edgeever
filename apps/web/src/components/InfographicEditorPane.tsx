@@ -373,7 +373,7 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
         currentContent,
         candidates,
         history: history.filter((turn) => !turn.undoneAt && turn.kind !== "failed")
-          .slice(-12).map((turn) => ({ prompt: turn.prompt, response: `${turn.response || turn.resultTitle}${turn.decision ? `\nDecision: ${turn.decision}` : ""}`.slice(0, 2000) })),
+          .slice(-12).map((turn) => ({ prompt: turn.prompt, response: `${turn.kind === "clarified" ? "No infographic change was applied. Clarification: " : ""}${turn.response || turn.resultTitle}${turn.decision ? `\nDecision: ${turn.decision}` : ""}`.slice(0, 2000) })),
       }, { signal: controller.signal, onEvent: (event) => {
         if (event.type === "text-delta") {
           response += event.text;

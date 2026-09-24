@@ -219,4 +219,13 @@ describe("infographic generation", () => {
     expect(candidates.length).toBeLessThanOrEqual(50);
     expect(new Set(candidates.map(officialTemplateFamily))).toEqual(new Set(["chart", "comparison", "hierarchy", "list", "quadrant", "relation", "sequence"]));
   });
+
+  test("development history prioritizes timeline templates over the current comparison", () => {
+    const current = "compare-binary-horizontal-badge-card-vs";
+    expect(inferInfographicFamily("给我换成字节的发展历程")).toBe("sequence");
+    const candidates = infographicAgentCandidates("给我换成字节的发展历程", getTemplates(), current);
+    expect(candidates[0].startsWith("sequence-timeline-")).toBe(true);
+    expect(candidates).toContain(current);
+    expect(shortlistOfficialTemplates("给我换成字节的发展历程", getTemplates(), current, "sequence").every((id) => id.startsWith("sequence-timeline-"))).toBe(true);
+  });
 });

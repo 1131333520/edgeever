@@ -1,3 +1,5 @@
+import { infographicRequestsTimeline } from "@edgeever/shared";
+
 export const INFOGRAPHIC_TEMPLATES = [
   { id: "list-row-simple-horizontal-arrow", label: "simpleList", kind: "steps", hint: "short horizontal process" },
   { id: "sequence-steps-simple", label: "numberedSteps", kind: "steps", hint: "numbered steps" },
@@ -213,7 +215,7 @@ export const shortlistOfficialTemplates = (request: string, templates: string[],
     : /(关系图|网络图|network|relation)/i.test(request) ? "relation"
     : /(四象限|象限|quadrant)/i.test(request) ? "quadrant"
     : /(对比|比较|差异|swot|\bvs\b|comparison)/i.test(request) ? "comparison"
-    : /(步骤|流程|时间线|时间轴|路线图|里程碑|step|process|timeline|roadmap)/i.test(request) ? "sequence"
+    : /(步骤|流程|时间线|时间轴|发展历程|发展史|历史沿革|成长历程|路线图|里程碑|step|process|timeline|roadmap)/i.test(request) ? "sequence"
     : /(饼图|柱状图|折线图|图表|chart|graph)/i.test(request) ? "chart"
     : currentTemplate ? officialTemplateFamily(currentTemplate) : "list");
   const words = request.toLowerCase().match(/[a-z]+/g) ?? [];
@@ -226,7 +228,7 @@ export const shortlistOfficialTemplates = (request: string, templates: string[],
       : candidates.filter((id) => id.endsWith("-vs"))
     : candidates;
   const familyCandidates = comparisonCandidates.length ? comparisonCandidates : candidates;
-  const shapedCandidates = requestedFamily === "sequence" && /(时间线|时间轴|timeline|chronolog)/i.test(request)
+  const shapedCandidates = requestedFamily === "sequence" && /(时间线|时间轴|发展历程|发展史|历史沿革|成长历程|里程碑|timeline|chronolog)/i.test(request)
     ? familyCandidates.filter((id) => id.startsWith("sequence-timeline-"))
     : requestedFamily === "sequence" && /(路线图|roadmap)/i.test(request)
       ? familyCandidates.filter((id) => id.startsWith("sequence-roadmap-"))
@@ -242,6 +244,7 @@ export const shortlistOfficialTemplates = (request: string, templates: string[],
 
 export const infographicAgentCandidates = (request: string, templates: string[], currentTemplate?: string) =>
   [...new Set([
+    ...(infographicRequestsTimeline(request) ? shortlistOfficialTemplates(request, templates, currentTemplate, "sequence").slice(0, 6) : []),
     ...(currentTemplate && templates.includes(currentTemplate) ? [currentTemplate] : []),
     ...INFOGRAPHIC_FAMILIES.flatMap((family) => shortlistOfficialTemplates(request, templates, currentTemplate, family).slice(0, 6)),
   ])].slice(0, 50);
@@ -281,7 +284,7 @@ export const buildInfographicSyntax = (input: {
 export const inferInfographicKind = (request: string): InfographicKind | null => {
   if (/(四象限|象限|swot|quadrant|2\s*[×xX]\s*2)/i.test(request)) return "quadrant";
   if (/(对比|比较|差异|\bvs\.?\b|\bversus\b|compar(?:e|ison))/i.test(request)) return "comparison";
-  if (/(时间线|时间轴|路线图|里程碑|timeline|chronolog|roadmap)/i.test(request)) return "timeline";
+  if (/(时间线|时间轴|发展历程|发展史|历史沿革|成长历程|路线图|里程碑|timeline|chronolog|roadmap)/i.test(request)) return "timeline";
   if (/(步骤|流程|step|process)/i.test(request)) return "steps";
   if (/(清单|列表|金字塔|网格|list|pyramid|grid)/i.test(request)) return "list";
   return null;
