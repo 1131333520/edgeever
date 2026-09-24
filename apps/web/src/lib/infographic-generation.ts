@@ -32,6 +32,36 @@ export const infographicTemplatePrompt = () => selectableInfographicTemplates
   .map((item) => `${item.id} (${item.kind}: ${item.hint})`).join("; ");
 
 export type OfficialTemplateFamily = "chart" | "comparison" | "hierarchy" | "list" | "quadrant" | "relation" | "sequence";
+export const INFOGRAPHIC_FAMILIES: OfficialTemplateFamily[] = ["chart", "comparison", "hierarchy", "list", "quadrant", "relation", "sequence"];
+
+export type InfographicFamilyDecision = {
+  family: OfficialTemplateFamily;
+  confidence: number;
+  alternatives: OfficialTemplateFamily[];
+  ambiguous: boolean;
+};
+
+export const parseInfographicFamilyDecision = (output: string): InfographicFamilyDecision | null => {
+  const first = output.indexOf("{");
+  const last = output.lastIndexOf("}");
+  if (first < 0 || last <= first) return null;
+  try {
+    const value: unknown = JSON.parse(output.slice(first, last + 1));
+    if (!isRecord(value) || !INFOGRAPHIC_FAMILIES.includes(value.family as OfficialTemplateFamily)
+      || typeof value.confidence !== "number" || !Number.isFinite(value.confidence)
+      || value.confidence < 0 || value.confidence > 1 || typeof value.ambiguous !== "boolean"
+      || !Array.isArray(value.alternatives)) return null;
+    const alternatives = value.alternatives.filter((family): family is OfficialTemplateFamily =>
+      INFOGRAPHIC_FAMILIES.includes(family as OfficialTemplateFamily) && family !== value.family);
+    if ((value.ambiguous || value.confidence < 0.65) && alternatives.length === 0) return null;
+    return { family: value.family as OfficialTemplateFamily, confidence: value.confidence,
+      alternatives: [...new Set(alternatives)].slice(0, 2), ambiguous: value.ambiguous };
+  } catch { return null; }
+};
+
+export const infographicFamilyChoices = (decision: InfographicFamilyDecision) =>
+  decision.ambiguous || decision.confidence < 0.65
+    ? [decision.family, ...decision.alternatives].slice(0, 3) : [];
 
 export const officialTemplateFamily = (id: string): OfficialTemplateFamily => {
   if (/^(compare-)?quadrant-/.test(id) || id.startsWith("compare-quadrant-")) return "quadrant";
@@ -137,12 +167,15 @@ export const parseGeneratedOfficialData = (output: string, template: string): Re
     const items = raw.slice(0, family === "quadrant" ? 4 : family === "comparison" ? 4 : 16).map((item) => normalizedDatum(item)).filter((item): item is Record<string, unknown> => Boolean(item));
     if (!items.length || (family === "quadrant" && items.length !== 4) || (template.startsWith("compare-binary-") && items.length !== 2) || (template === "compare-swot" && items.length !== 4)) return null;
     if (family !== "relation" && items.some((item) => !item.label)) return null;
+    if (template.startsWith("compare-binary-") && (items.some((item) => !Array.isArray(item.children) || !item.children.length)
+      || (items[0].children as unknown[]).length !== (items[1].children as unknown[]).length)) return null;
     if (family === "chart" && items.some((item) => typeof item.value !== "number" || !item.label)) return null;
     if (family === "relation" && (items.some((item) => !item.id || !item.label) || new Set(items.map((item) => item.id)).size !== items.length)) return null;
     data[field] = items;
     if (family === "relation") {
       const ids = new Set(items.map((item) => item.id));
       const relations = Array.isArray(source.relations) ? source.relations.slice(0, 24).map((item) => normalizedDatum(item)).filter((item): item is Record<string, unknown> => Boolean(item?.from && item?.to && ids.has(item.from) && ids.has(item.to))) : [];
+      if (items.length > 1 && !relations.length) return null;
       data.relations = relations;
     }
   }
@@ -160,15 +193,15 @@ export const parseGeneratedOfficialSelection = (output: string, templates: strin
   return data ? { template: parsed.template, data } : null;
 };
 
-export const shortlistOfficialTemplates = (request: string, templates: string[], currentTemplate?: string) => {
-  const requestedFamily: OfficialTemplateFamily = templateForRequest(request)?.startsWith("chart-") ? "chart"
+export const shortlistOfficialTemplates = (request: string, templates: string[], currentTemplate?: string, family?: OfficialTemplateFamily) => {
+  const requestedFamily: OfficialTemplateFamily = family ?? (templateForRequest(request)?.startsWith("chart-") ? "chart"
     : /(思维导图|脑图|树状图|组织结构|层级|mind\s*map|hierarchy|org chart)/i.test(request) ? "hierarchy"
     : /(关系图|网络图|network|relation)/i.test(request) ? "relation"
     : /(四象限|象限|quadrant)/i.test(request) ? "quadrant"
     : /(对比|比较|差异|swot|\bvs\b|comparison)/i.test(request) ? "comparison"
     : /(步骤|流程|时间线|时间轴|路线图|里程碑|step|process|timeline|roadmap)/i.test(request) ? "sequence"
     : /(饼图|柱状图|折线图|图表|chart|graph)/i.test(request) ? "chart"
-    : currentTemplate ? officialTemplateFamily(currentTemplate) : "list";
+    : currentTemplate ? officialTemplateFamily(currentTemplate) : "list");
   const words = request.toLowerCase().match(/[a-z]+/g) ?? [];
   const preferred = new Set([templateForRequest(request), ...(!requestsInfographicLayoutChange(request) ? [currentTemplate] : [])].filter(Boolean));
   const candidates = templates.filter((id) => officialTemplateFamily(id) === requestedFamily);
@@ -179,9 +212,14 @@ export const shortlistOfficialTemplates = (request: string, templates: string[],
       : candidates.filter((id) => id.endsWith("-vs"))
     : candidates;
   const familyCandidates = comparisonCandidates.length ? comparisonCandidates : candidates;
+  const shapedCandidates = requestedFamily === "sequence" && /(时间线|时间轴|timeline|chronolog)/i.test(request)
+    ? familyCandidates.filter((id) => id.startsWith("sequence-timeline-"))
+    : requestedFamily === "sequence" && /(路线图|roadmap)/i.test(request)
+      ? familyCandidates.filter((id) => id.startsWith("sequence-roadmap-"))
+      : familyCandidates;
   const alternatives = requestsInfographicLayoutChange(request)
-    ? familyCandidates.filter((id) => id !== currentTemplate) : familyCandidates;
-  return (alternatives.length ? alternatives : familyCandidates)
+    ? shapedCandidates.filter((id) => id !== currentTemplate) : shapedCandidates;
+  return (alternatives.length ? alternatives : shapedCandidates)
     .map((id, index) => ({ id, score: (preferred.has(id) ? 100 : 0) + words.filter((word) => word.length > 2 && id.includes(word)).length * 8 - index * 0.01 }))
     .sort((left, right) => right.score - left.score)
     .slice(0, 12)
@@ -229,9 +267,22 @@ export const inferInfographicKind = (request: string): InfographicKind | null =>
   return null;
 };
 
+export const inferInfographicFamily = (request: string): OfficialTemplateFamily | null => {
+  const namedTemplate = templateForRequest(request);
+  if (namedTemplate) return officialTemplateFamily(namedTemplate);
+  const kind = inferInfographicKind(request);
+  if (kind === "steps" || kind === "timeline") return "sequence";
+  if (kind) return kind;
+  if (/(数据可视化|图表|\bchart\b)/i.test(request)) return "chart";
+  return null;
+};
+
 export const requestsInfographicLayoutChange = (request: string) =>
   /(模板|版式|风格|样式|布局|排版|紧凑|圆形|金字塔|网格|路线图|里程碑|编号|交错|template|layout|style|compact|circular|pyramid|grid|roadmap|milestone|numbered|zigzag)/i.test(request)
-  || /(换个|另一种|其他).{0,8}(图|模板|版式)/i.test(request);
+  || /(换个|另一种|其他|更合适).{0,8}(图|模板|版式)/i.test(request);
+
+export const requestsInfographicFamilyChange = (request: string) =>
+  /(图形类型|图表类型|换个图|另一种图|其他图|更合适的图|different (?:chart|diagram|type))/i.test(request);
 
 const inferInfographicTemplate = (request: string, kind: InfographicKind): string | null => {
   if (kind === "quadrant" && /(圆形|圆环|circular)/i.test(request)) return "compare-quadrant-quarter-circular";
@@ -246,7 +297,8 @@ const inferInfographicTemplate = (request: string, kind: InfographicKind): strin
   return null;
 };
 
-export const resolveInfographicTemplateSelection = (request: string, templates: string[], currentTemplate?: string) => {
+export const resolveInfographicTemplateSelection = (request: string, templates: string[], currentTemplate?: string, family?: OfficialTemplateFamily) => {
+  if (family) return { template: null, candidates: shortlistOfficialTemplates(request, templates, currentTemplate, family) };
   const namedTemplate = templates.find((id) => request.includes(id));
   const requestedKind = inferInfographicKind(request);
   const inferredTemplate = templateForRequest(request)

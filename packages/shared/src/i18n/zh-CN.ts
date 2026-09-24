@@ -16,7 +16,7 @@ export const zhCN = {
     saveError: "保存失败，请重试。", sessionError: "无法开启编辑会话，请重试。", aiError: "生成失败，请检查 AI 模型设置后重试。", aiInvalidResponse: "生成内容无法组成信息图，请重试。",
     selectTemplate: "选择模板", simpleList: "横向步骤", numberedSteps: "编号步骤", zigzagSteps: "交错流程", verticalList: "纵向清单", gridList: "网格清单", pyramidList: "金字塔清单", timeline: "时间线", timelineChecklist: "里程碑时间线", roadmap: "纵向路线图", comparison: "双栏对比图", compactComparison: "紧凑对比图", arrowComparison: "方向对比图", quadrant: "四象限图", circularQuadrant: "圆形四象限", themeDefault: "默认", themeDark: "深色",
     stepsGroup: "流程型", listGroup: "列表型", timelineGroup: "时间与路线", comparisonGroup: "对比型", quadrantGroup: "四象限型",
-    officialTemplates: "AntV 官方模板（{{count}}）", searchTemplates: "搜索模板 ID", templateCategory: "模板分类", allCategories: "全部分类", chartCategory: "图表型", comparisonCategory: "对比型", hierarchyCategory: "层级型", listCategory: "列表型", quadrantCategory: "四象限型", relationCategory: "关系型", sequenceCategory: "顺序型",
+    officialTemplates: "AntV 官方模板（{{count}}）", searchTemplates: "搜索模板 ID", templateCategory: "模板分类", chooseCategory: "这段内容适合哪类信息图？", allCategories: "全部分类", chartCategory: "图表型", comparisonCategory: "对比型", hierarchyCategory: "层级型", listCategory: "列表型", quadrantCategory: "四象限型", relationCategory: "关系型", sequenceCategory: "顺序型",
     sourceHelp: "语法是此信息图的可编辑源文件；预览随更改更新。", readOnly: "只读",
   },
   companion: {

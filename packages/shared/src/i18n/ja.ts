@@ -16,7 +16,7 @@ export const ja = {
     saveError: "保存できませんでした。再試行してください。", sessionError: "編集セッションを開始できませんでした。", aiError: "生成に失敗しました。AI モデルの設定を確認してください。", aiInvalidResponse: "生成内容からインフォグラフィックを作成できません。再試行してください。",
     selectTemplate: "テンプレートを選択", simpleList: "横向きの手順", numberedSteps: "番号付き手順", zigzagSteps: "ジグザグ手順", verticalList: "縦向きのリスト", gridList: "グリッドリスト", pyramidList: "ピラミッドリスト", timeline: "タイムライン", timelineChecklist: "マイルストーン", roadmap: "縦型ロードマップ", comparison: "左右比較図", compactComparison: "コンパクト比較図", arrowComparison: "方向比較図", quadrant: "四象限図", circularQuadrant: "円形四象限", themeDefault: "標準", themeDark: "ダーク",
     stepsGroup: "手順", listGroup: "リスト", timelineGroup: "時間とロードマップ", comparisonGroup: "比較", quadrantGroup: "四象限",
-    officialTemplates: "AntV テンプレート（{{count}}）", searchTemplates: "テンプレート ID を検索", templateCategory: "テンプレート分類", allCategories: "すべての分類", chartCategory: "チャート", comparisonCategory: "比較", hierarchyCategory: "階層", listCategory: "リスト", quadrantCategory: "四象限", relationCategory: "関係", sequenceCategory: "順序",
+    officialTemplates: "AntV テンプレート（{{count}}）", searchTemplates: "テンプレート ID を検索", templateCategory: "テンプレート分類", chooseCategory: "この内容に合う図の種類を選んでください", allCategories: "すべての分類", chartCategory: "チャート", comparisonCategory: "比較", hierarchyCategory: "階層", listCategory: "リスト", quadrantCategory: "四象限", relationCategory: "関係", sequenceCategory: "順序",
     sourceHelp: "構文が編集可能な元データです。変更するとプレビューが更新されます。", readOnly: "読み取り専用",
   },
   companion: {

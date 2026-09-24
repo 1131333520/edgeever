@@ -4,13 +4,17 @@ import {
   buildInfographicSyntax,
   buildOfficialInfographicSyntax,
   generatedInfographicSyntax,
+  inferInfographicFamily,
   inferInfographicKind,
+  infographicFamilyChoices,
   officialTemplateFamily,
   parseGeneratedInfographicContent,
   parseGeneratedOfficialData,
   parseGeneratedOfficialSelection,
+  parseInfographicFamilyDecision,
   resolveInfographicTemplateSelection,
   requestsInfographicLayoutChange,
+  requestsInfographicFamilyChange,
   sampleOfficialData,
   selectableInfographicTemplates,
   shortlistOfficialTemplates,
@@ -108,6 +112,8 @@ describe("infographic generation", () => {
     expect(parseGeneratedOfficialData(JSON.stringify({ data: { ...data, compares: data.compares.slice(0, 3) } }), quadrant)).toBeNull();
     expect(parseGeneratedOfficialData(JSON.stringify({ data: { title: "坏图", values: [{ label: "A", value: "abc" }] } }), "chart-column-simple")).toBeNull();
     expect(parseGeneratedOfficialData(JSON.stringify({ data: { title: "重复节点", nodes: [{ id: "a", label: "A" }, { id: "a", label: "B" }] } }), "relation-network-simple-circle-node")).toBeNull();
+    expect(parseGeneratedOfficialData(JSON.stringify({ data: { title: "空关系", nodes: [{ id: "a", label: "A" }, { id: "b", label: "B" }], relations: [] } }), "relation-network-simple-circle-node")).toBeNull();
+    expect(parseGeneratedOfficialData(JSON.stringify({ data: { title: "单侧对比", compares: [{ label: "A", children: [{ label: "业务" }] }, { label: "B" }] } }), "compare-binary-horizontal-badge-card-vs")).toBeNull();
   });
 
   test("AI can select any installed template while an unknown ID is rejected", () => {
@@ -166,5 +172,25 @@ describe("infographic generation", () => {
     expect(alternative.candidates).not.toContain(current);
     expect(resolveInfographicTemplateSelection("换个版式，数据保留", templates, current).candidates.every((id) => officialTemplateFamily(id) === "comparison")).toBe(true);
     expect(resolveInfographicTemplateSelection("改成四象限图", templates, current).candidates.every((id) => officialTemplateFamily(id) === "quadrant")).toBe(true);
+  });
+
+  test("a chosen semantic family limits template selection before generation", () => {
+    const templates = getTemplates();
+    expect(inferInfographicFamily("比较腾讯和阿里巴巴")).toBe("comparison");
+    expect(inferInfographicFamily("展示季度收入趋势")).toBeNull();
+    expect(requestsInfographicFamilyChange("换成更合适的图")).toBe(true);
+    expect(resolveInfographicTemplateSelection("展示季度收入趋势", templates, undefined, "chart").candidates.every((id) => officialTemplateFamily(id) === "chart")).toBe(true);
+    expect(resolveInfographicTemplateSelection("产品发布的时间线", templates, undefined, "sequence").candidates.every((id) => id.startsWith("sequence-timeline-"))).toBe(true);
+  });
+
+  test("AI family decisions are validated and uncertain choices are offered to the user", () => {
+    const confident = parseInfographicFamilyDecision('{"family":"comparison","confidence":0.91,"ambiguous":false,"alternatives":["list"]}');
+    expect(confident?.family).toBe("comparison");
+    expect(infographicFamilyChoices(confident)).toEqual([]);
+    const uncertain = parseInfographicFamilyDecision('```json\n{"family":"hierarchy","confidence":0.54,"ambiguous":true,"alternatives":["relation","list","invalid"]}\n```');
+    expect(infographicFamilyChoices(uncertain)).toEqual(["hierarchy", "relation", "list"]);
+    expect(parseInfographicFamilyDecision('{"family":"made-up","confidence":1,"ambiguous":false,"alternatives":[]}')).toBeNull();
+    expect(parseInfographicFamilyDecision('{"family":"list","confidence":1.4,"ambiguous":false,"alternatives":[]}')).toBeNull();
+    expect(parseInfographicFamilyDecision('{"family":"list","confidence":0.4,"ambiguous":true,"alternatives":[]}')).toBeNull();
   });
 });
