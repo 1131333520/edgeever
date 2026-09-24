@@ -240,6 +240,12 @@ export const shortlistOfficialTemplates = (request: string, templates: string[],
     .map(({ id }) => id);
 };
 
+export const infographicAgentCandidates = (request: string, templates: string[], currentTemplate?: string) =>
+  [...new Set([
+    ...(currentTemplate && templates.includes(currentTemplate) ? [currentTemplate] : []),
+    ...INFOGRAPHIC_FAMILIES.flatMap((family) => shortlistOfficialTemplates(request, templates, currentTemplate, family).slice(0, 6)),
+  ])].slice(0, 50);
+
 const plainLine = (value: string) => value.replace(/\s+/g, " ").trim();
 
 export const buildInfographicSyntax = (input: {

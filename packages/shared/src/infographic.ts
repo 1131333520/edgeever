@@ -1,6 +1,8 @@
 import { Base64 } from "js-base64";
+import { z } from "zod";
 
 export const INFOGRAPHIC_SCHEMA_VERSION = 1 as const;
+export const INFOGRAPHIC_AGENT_SOURCE_MAX_LENGTH = 100_000;
 const MARKER = "edgeever-infographic-v1";
 const COMMENT = /<!--\s*edgeever-infographic-v1:([A-Za-z0-9_-]+)\s*-->/;
 
@@ -15,10 +17,32 @@ export type InfographicConversationTurn = {
   id: string;
   prompt: string;
   createdAt: string;
-  kind: "generated" | "refined";
+  kind: "generated" | "refined" | "clarified" | "failed";
   resultTitle: string;
+  response?: string;
+  decision?: string;
+  template?: string;
+  error?: string;
   undoneAt?: string;
 };
+
+export const InfographicAgentRequestSchema = z.object({
+  prompt: z.string().trim().min(1).max(1000),
+  locale: z.string().trim().min(2).max(35).optional(),
+  currentTemplate: z.string().regex(/^[a-z0-9-]+$/).max(120).optional(),
+  currentContent: z.string().max(INFOGRAPHIC_AGENT_SOURCE_MAX_LENGTH).default(""),
+  candidates: z.array(z.string().regex(/^[a-z0-9-]+$/).max(120)).min(1).max(50),
+  history: z.array(z.object({ prompt: z.string().max(1000), response: z.string().max(2000) })).max(12).default([]),
+});
+
+export type InfographicAgentRequest = z.infer<typeof InfographicAgentRequestSchema>;
+export type InfographicAgentEvent =
+  | { type: "start" }
+  | { type: "text-delta"; text: string }
+  | { type: "proposal"; template: string; data: Record<string, unknown>; explanation: string }
+  | { type: "question"; question: string }
+  | { type: "finish" }
+  | { type: "error"; message: string };
 
 export const createDefaultInfographicDocument = (): InfographicDocument => ({
   schemaVersion: INFOGRAPHIC_SCHEMA_VERSION,
@@ -53,8 +77,12 @@ export const parseInfographicDocument = (markdown: string | null | undefined): I
       if (!turn || typeof turn !== "object" || Array.isArray(turn)) return false;
       const value = turn as Record<string, unknown>;
       return typeof value.id === "string" && typeof value.prompt === "string" && value.prompt.length <= 1000
-        && typeof value.createdAt === "string" && (value.kind === "generated" || value.kind === "refined")
-        && typeof value.resultTitle === "string" && (value.undoneAt === undefined || typeof value.undoneAt === "string");
+        && typeof value.createdAt === "string" && (value.kind === "generated" || value.kind === "refined" || value.kind === "clarified" || value.kind === "failed")
+        && typeof value.resultTitle === "string" && (value.response === undefined || typeof value.response === "string" && value.response.length <= 4000)
+        && (value.decision === undefined || typeof value.decision === "string" && value.decision.length <= 500)
+        && (value.template === undefined || typeof value.template === "string")
+        && (value.error === undefined || typeof value.error === "string")
+        && (value.undoneAt === undefined || typeof value.undoneAt === "string");
     }))) return null;
     return { schemaVersion: INFOGRAPHIC_SCHEMA_VERSION, syntax: document.syntax, ...(history ? { history: history as InfographicConversationTurn[] } : {}) };
   } catch {

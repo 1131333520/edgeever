@@ -4,6 +4,7 @@ import {
   buildInfographicSyntax,
   buildOfficialInfographicSyntax,
   generatedInfographicSyntax,
+  infographicAgentCandidates,
   inferInfographicFamily,
   inferInfographicKind,
   infographicFamilyChoices,
@@ -209,5 +210,13 @@ describe("infographic generation", () => {
     expect(resolveInfographicEditSelection("让画面更紧凑", templates, current, layout).candidates).not.toContain(current);
     expect(resolveInfographicEditSelection("换成紧凑对比图版式", templates, current, layout).template).toBe("compare-binary-horizontal-compact-card-vs");
     expect(parseInfographicEditDecision('{"intent":"unknown","family":"sequence","confidence":1,"ambiguous":false,"alternatives":[]}')).toBeNull();
+  });
+
+  test("agent shortlist includes the current template and each semantic family", () => {
+    const current = "compare-binary-horizontal-badge-card-vs";
+    const candidates = infographicAgentCandidates("把字节跳动换成阿里巴巴", getTemplates(), current);
+    expect(candidates[0]).toBe(current);
+    expect(candidates.length).toBeLessThanOrEqual(50);
+    expect(new Set(candidates.map(officialTemplateFamily))).toEqual(new Set(["chart", "comparison", "hierarchy", "list", "quadrant", "relation", "sequence"]));
   });
 });

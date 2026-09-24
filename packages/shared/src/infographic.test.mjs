@@ -3,6 +3,7 @@ import { createDefaultDiagramDocument, parseDiagramDocument, serializeDiagramDoc
 import {
   createDefaultInfographicDocument,
   getInfographicSummary,
+  InfographicAgentRequestSchema,
   parseInfographicDocument,
   serializeInfographicDocument,
 } from "./infographic.ts";
@@ -36,6 +37,16 @@ describe("infographic note format", () => {
     };
     expect(parseInfographicDocument(serializeInfographicDocument(document))).toEqual(document);
     expect(parseInfographicDocument(serializeInfographicDocument({ ...document, history: [{ ...document.history[0], prompt: 42 }] }))).toBeNull();
+  });
+
+  test("keeps agent replies and clarification turns in the note", () => {
+    const document = { schemaVersion: 1, syntax: "", history: [
+      { id: "clarify", prompt: "换一家", response: "你想换成哪家公司？", kind: "clarified", resultTitle: "", createdAt: "2026-09-24T10:00:00.000Z" },
+      { id: "edit", prompt: "阿里巴巴", response: "已替换对比对象。", decision: "对比关系未变，因此沿用原模板。", kind: "refined", resultTitle: "腾讯 vs 阿里巴巴", template: "compare-binary-horizontal-badge-card-vs", createdAt: "2026-09-24T10:01:00.000Z" },
+    ] };
+    expect(parseInfographicDocument(serializeInfographicDocument(document))).toEqual(document);
+    expect(InfographicAgentRequestSchema.safeParse({ prompt: "修改", currentContent: "", candidates: ["compare-binary-horizontal-badge-card-vs"], history: [{ prompt: "原请求", response: "原回复" }] }).success).toBe(true);
+    expect(InfographicAgentRequestSchema.safeParse({ prompt: "修改", currentContent: "", candidates: [], history: [] }).success).toBe(false);
   });
 
   test("infographic syntax and visual diagram IR keep separate envelopes", () => {
