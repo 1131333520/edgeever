@@ -468,7 +468,11 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
         </div>
         {!readOnly && <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
           <label className="mb-2 block text-sm font-medium text-slate-800" htmlFor="infographic-prompt"><Sparkles className="mr-1 inline h-4 w-4 text-emerald-700" />{t(syntax.trim() ? "infographic.refine" : "infographic.describe")}</label>
-          <textarea id="infographic-prompt" maxLength={1000} disabled={generating} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-60" placeholder={t(syntax.trim() ? "infographic.refinePrompt" : "infographic.prompt")} value={prompt} onChange={(event) => setPrompt(event.target.value)} />
+          <textarea id="infographic-prompt" maxLength={1000} disabled={generating} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-60" placeholder={t(syntax.trim() ? "infographic.refinePrompt" : "infographic.prompt")} value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing || event.keyCode === 229) return;
+            event.preventDefault();
+            if (!event.repeat && prompt.trim() && !generating) void generate();
+          }} />
           <div className="mt-2 flex flex-wrap items-center gap-2"><Button size="sm" disabled={!prompt.trim() || generating} onClick={() => void generate()}>{generating ? <LoaderCircle className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}{generating ? t("infographic.generating") : t(syntax.trim() ? "infographic.applyRefinement" : "infographic.generate")}</Button>
             {previousGeneration && <Button size="sm" variant="outline" onClick={undoGeneration}><Undo2 className="mr-1 h-4 w-4" />{t("infographic.undoGeneration")}</Button>}
           </div>
