@@ -6,7 +6,7 @@ export const enUS = {
     name: "Infographic", autoLayout: "Auto layout", describe: "Describe and generate", chooseTemplate: "Choose a template and fill content",
     prompt: "Describe the information, structure, and key points", generate: "Generate infographic", generating: "Generating…",
     refine: "Describe what to change", refinePrompt: "For example: change the second item to user growth", applyRefinement: "Revise with AI", undoGeneration: "Undo last generation", fineTune: "Fine-tune manually",
-    historyTitle: "AI conversation history", historyGenerated: "Generated “{{title}}”", historyRefined: "Revised “{{title}}”", historyClarified: "More information needed", historyFailed: "This revision was not completed", historyUndone: "This revision was undone",
+    historyTitle: "AI conversation history", scrollToBottom: "Scroll to latest message", historyGenerated: "Generated “{{title}}”", historyRefined: "Revised “{{title}}”", historyClarified: "More information needed", historyFailed: "This revision was not completed", historyUndone: "This revision was undone",
     doubleClickText: "Double-click text in the graphic to edit it. Changes save automatically.",
     structureSettings: "Structure and style · Bulk edit", editSyntax: "Edit source syntax", backToStructure: "Back to structure and style",
     title: "Title", description: "Description", items: "Items (one per line, use ‘Title | Description’)", comparisonItems: "One line per side; add aspects as ‘- Aspect | Description’", template: "Template", theme: "Color theme",

@@ -9,7 +9,7 @@ export default {
   darkMode: "class",
   content: {
     relative: true,
-    files: ["./index.html", "./src/**/*.{ts,tsx}"],
+    files: ["./index.html", "./src/**/*.{ts,tsx}", "./node_modules/streamdown/dist/*.js"],
   },
   theme: {
     extend: {

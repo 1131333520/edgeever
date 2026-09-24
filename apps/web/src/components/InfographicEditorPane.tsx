@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { INFOGRAPHIC_AGENT_SOURCE_MAX_LENGTH, markdownToDoc, infographicFallbackMarkdown, parseInfographicDocument, serializeInfographicDocument, type InfographicConversationTurn, type InfographicDocument, type MemoDetail, type MemoEditSession } from "@edgeever/shared";
 import type { Infographic as InfographicInstance, SyntaxParseResult } from "@antv/infographic";
 import { Button } from "@/components/ui/button";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { api } from "@/lib/api";
 import { createLocalEditSession, requiresLocalEditSession } from "@/components/editor/editor-pane-helpers";
@@ -186,7 +188,6 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
   const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify([memo.title ?? "", parsed?.syntax ?? "", parsed?.history ?? []]));
   const [savedHistorySnapshot, setSavedHistorySnapshot] = useState(JSON.stringify(parsed?.history ?? []));
   const containerRef = useRef<HTMLDivElement>(null);
-  const historyViewportRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<InfographicInstance | null>(null);
   const sessionRef = useRef<MemoEditSession | null>(null);
   const generationControllerRef = useRef<AbortController | null>(null);
@@ -201,10 +202,6 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
   }, [memo]);
 
   useEffect(() => () => generationControllerRef.current?.abort(), []);
-
-  useEffect(() => {
-    if (historyViewportRef.current) historyViewportRef.current.scrollTop = historyViewportRef.current.scrollHeight;
-  }, [history, activeTurn]);
 
   useEffect(() => {
     if (readOnly) return;
@@ -440,32 +437,31 @@ export default function InfographicEditorPane({ memo, repository, readOnly, onBa
     {error ? <p role="alert" className="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-700">{error}</p> : null}
     <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(300px,34%)_1fr]">
       <section className="flex min-h-[320px] max-h-[60vh] flex-col border-b border-slate-200 p-5 lg:min-h-0 lg:max-h-none lg:border-b-0 lg:border-r">
-        <div ref={historyViewportRef} className="min-h-0 flex-1 overflow-y-auto" role="log" aria-label={t("infographic.historyTitle")}>
-          {(history.length > 0 || activeTurn) && <div className="pb-5">
-            <h2 className="mb-3 text-sm font-semibold text-slate-800">{t("infographic.historyTitle")}</h2>
-            <ol className="space-y-4">
-              {history.map((turn) => <li key={turn.id} className="space-y-2 text-sm">
-                <div className="flex justify-end"><div className="max-w-[92%] rounded-xl bg-emerald-50 px-3 py-2 text-slate-800 whitespace-pre-wrap break-words">{turn.prompt}</div></div>
-                <div className="max-w-[92%] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700">
-                  <p className="whitespace-pre-wrap break-words">{turn.response || (turn.kind === "clarified" ? t("infographic.historyClarified") : turn.kind === "failed" ? t("infographic.historyFailed") : t(turn.kind === "generated" ? "infographic.historyGenerated" : "infographic.historyRefined", { title: turn.resultTitle || t("infographic.name") }))}</p>
-                  {turn.decision && turn.decision !== turn.response && <p className="mt-1 text-xs text-slate-600">{turn.decision}</p>}
-                  {turn.template && <p className="mt-1 text-xs text-slate-500">{turn.template}</p>}
-                  {turn.error && <p className="mt-1 text-xs text-red-600">{turn.error}</p>}
-                  {turn.undoneAt && <p className="mt-1 text-xs text-slate-500">{t("infographic.historyUndone")}</p>}
-                  <time className="mt-1 block text-xs text-slate-500" dateTime={turn.createdAt}>{new Date(turn.createdAt).toLocaleString(i18n.resolvedLanguage)}</time>
-                </div>
-              </li>)}
-              {activeTurn && <li className="space-y-2 text-sm" aria-live="polite">
-                <div className="flex justify-end"><div className="max-w-[92%] rounded-xl bg-emerald-50 px-3 py-2 text-slate-800 whitespace-pre-wrap break-words">{activeTurn.prompt}</div></div>
-                <div className="max-w-[92%] rounded-xl border border-emerald-200 bg-white px-3 py-2 text-slate-700">
-                  <p className="whitespace-pre-wrap break-words">{activeTurn.response || activeTurn.question || t("infographic.generating")}</p>
-                  {activeTurn.decision && activeTurn.decision !== activeTurn.response && <p className="mt-1 text-xs text-slate-600">{activeTurn.decision}</p>}
-                  {activeTurn.template && <p className="mt-1 text-xs text-slate-500">{activeTurn.template}</p>}
-                </div>
-              </li>}
-            </ol>
-          </div>}
-        </div>
+        <h2 className="mb-3 text-sm font-semibold text-slate-800">{t("infographic.historyTitle")}</h2>
+        <Conversation className="min-h-0 flex-1" aria-label={t("infographic.historyTitle")}>
+          <ConversationContent className="gap-4 p-0 pb-5">
+            {history.map((turn) => <div key={turn.id} className="space-y-2">
+              <Message from="user"><MessageContent className="whitespace-pre-wrap break-words group-[.is-user]:rounded-xl group-[.is-user]:bg-emerald-50 group-[.is-user]:px-3 group-[.is-user]:py-2">{turn.prompt}</MessageContent></Message>
+              <Message from="assistant"><MessageContent className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700">
+                <MessageResponse className="edgeever-infographic-chat-response break-words">{turn.response || (turn.kind === "clarified" ? t("infographic.historyClarified") : turn.kind === "failed" ? t("infographic.historyFailed") : t(turn.kind === "generated" ? "infographic.historyGenerated" : "infographic.historyRefined", { title: turn.resultTitle || t("infographic.name") }))}</MessageResponse>
+                {turn.decision && turn.decision !== turn.response && <p className="text-xs text-slate-600">{turn.decision}</p>}
+                {turn.template && <p className="text-xs text-slate-500">{turn.template}</p>}
+                {turn.error && <p className="text-xs text-red-600">{turn.error}</p>}
+                {turn.undoneAt && <p className="text-xs text-slate-500">{t("infographic.historyUndone")}</p>}
+                <time className="block text-xs text-slate-500" dateTime={turn.createdAt}>{new Date(turn.createdAt).toLocaleString(i18n.resolvedLanguage)}</time>
+              </MessageContent></Message>
+            </div>)}
+            {activeTurn && <div className="space-y-2" aria-live="polite">
+              <Message from="user"><MessageContent className="whitespace-pre-wrap break-words group-[.is-user]:rounded-xl group-[.is-user]:bg-emerald-50 group-[.is-user]:px-3 group-[.is-user]:py-2">{activeTurn.prompt}</MessageContent></Message>
+              <Message from="assistant"><MessageContent className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-slate-700">
+                <MessageResponse className="edgeever-infographic-chat-response break-words" isAnimating={generating}>{activeTurn.response || activeTurn.question || t("infographic.generating")}</MessageResponse>
+                {activeTurn.decision && activeTurn.decision !== activeTurn.response && <p className="text-xs text-slate-600">{activeTurn.decision}</p>}
+                {activeTurn.template && <p className="text-xs text-slate-500">{activeTurn.template}</p>}
+              </MessageContent></Message>
+            </div>}
+          </ConversationContent>
+          <ConversationScrollButton aria-label={t("infographic.scrollToBottom")} />
+        </Conversation>
         {!readOnly && <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
           <label className="mb-2 block text-sm font-medium text-slate-800" htmlFor="infographic-prompt"><Sparkles className="mr-1 inline h-4 w-4 text-emerald-700" />{t(syntax.trim() ? "infographic.refine" : "infographic.describe")}</label>
           <textarea id="infographic-prompt" maxLength={1000} disabled={generating} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-60" placeholder={t(syntax.trim() ? "infographic.refinePrompt" : "infographic.prompt")} value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => {

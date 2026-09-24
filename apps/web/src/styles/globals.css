@@ -20,6 +20,26 @@
   margin-inline: auto;
 }
 
+.edgeever-infographic-chat-response :is(p, ul, ol, blockquote, pre) {
+  margin-block: 0.35em;
+}
+
+.edgeever-infographic-chat-response :is(ul, ol) {
+  padding-inline-start: 1.25rem;
+}
+
+.edgeever-infographic-chat-response ul {
+  list-style: disc;
+}
+
+.edgeever-infographic-chat-response ol {
+  list-style: decimal;
+}
+
+.edgeever-infographic-chat-response pre {
+  overflow-x: auto;
+}
+
 @keyframes edgeever-token-created {
   0% {
     opacity: 0;
