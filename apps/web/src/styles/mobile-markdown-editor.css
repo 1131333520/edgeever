@@ -631,11 +631,11 @@ html.dark .edgeever-mobile-tiptap-content a:hover {
 }
 
 .edgeever-mobile-tiptap-content blockquote {
-  border-left: 3px solid #16a06e;
-  border-radius: 1px 4px 4px 1px;
-  padding: 0.35rem 0.5rem 0.35rem 0.85rem;
-  color: #334155;
-  background: color-mix(in srgb, #16a06e 4%, transparent);
+  border: 0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #3d4450;
+  background: #f3f5f7;
   margin: 0 0 0.85em;
 }
 
@@ -655,13 +655,13 @@ html.dark .edgeever-mobile-tiptap-content a:hover {
 }
 
 .edgeever-mobile-tiptap-content code {
-  border: 1px solid #d4ebdc;
+  border: 1px solid #e1e5ea;
   border-radius: 4px;
-  background: #f2f9f5;
+  background: #f3f5f7;
   padding: 0.12rem 0.38rem;
   font-size: 0.875em;
   font-weight: 550;
-  color: #0d5f3a;
+  color: #3d4450;
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -926,8 +926,8 @@ html.dark .edgeever-mobile-tiptap-content a:hover {
 }
 
 :root.dark .edgeever-mobile-tiptap-content blockquote {
-  color: #cbd5e1;
-  background: color-mix(in srgb, #16a06e 7%, transparent);
+  color: #e7e5e4;
+  background: rgb(255 255 255 / 0.05);
 }
 
 :root.dark .edgeever-mobile-tiptap-content th {
@@ -936,9 +936,9 @@ html.dark .edgeever-mobile-tiptap-content a:hover {
 }
 
 :root.dark .edgeever-mobile-tiptap-content code {
-  border-color: rgba(22, 160, 110, 0.28);
-  background: rgba(22, 160, 110, 0.12);
-  color: #6ee7b7;
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.06);
+  color: #e7e5e4;
 }
 
 :root.dark .edgeever-mobile-tiptap-content .edgeever-code-source {

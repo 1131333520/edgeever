@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspense, type CSSProperties, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo, lazy, Suspense, type CSSProperties, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
@@ -37,6 +37,7 @@ import { MemoEditorMetadataRow } from "@/components/MemoEditorMetadataRow";
 import { MemoEditorFocusModeButton, MemoEditorTopRowLeading, MemoEditorUpdatedLabel } from "@/components/MemoEditorTopRowLeading";
 import { MemoEditorToolbarDivider } from "@/components/MemoEditorToolbarChrome";
 import {
+  MEMO_EDITOR_READING_GUTTER_CLASS_NAME,
   MEMO_EDITOR_TITLE_REGION_CLASS_NAME,
   MEMO_EDITOR_TOP_ROW_CLASS_NAME,
 } from "@/components/MemoEditorChromeDensity";
@@ -112,7 +113,7 @@ import { api } from "@/lib/api";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceDownloadUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { contentReferencesStagedResourceUrl, findMatchingMemoResource, repairMemoStagedResourceUrls, repairTiptapStagedResourceUrls } from "@/lib/staged-resource-repair";
 import { cn, formatDateTime, parseTagsText } from "@/lib/utils";
-import { EDITOR_CONTENT_MAX_WIDTH, EDITOR_CONTENT_MAX_WIDTH_COLLAPSED } from "@/lib/workspace-ui";
+import { EDITOR_CONTENT_MAX_WIDTH, EDITOR_CONTENT_MAX_WIDTH_COLLAPSED, EDITOR_OUTLINE_WIDTH } from "@/lib/workspace-ui";
 import {
   countMemoCharacters,
   createEdgeEverDocumentExtensions,
@@ -523,6 +524,19 @@ const RichEditorPane = ({
     enabled: noteLinkPickerOpen,
   });
   const [editorScrollContainer, setEditorScrollContainer] = useState<HTMLDivElement | null>(null);
+  const [editorScrollbarGutter, setEditorScrollbarGutter] = useState(0);
+  useLayoutEffect(() => {
+    const element = editorScrollContainer;
+    if (!element) return;
+    const measure = () => {
+      const reserved = element.offsetWidth - element.clientWidth;
+      setEditorScrollbarGutter(reserved > 1 ? reserved / 2 : 0);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [editorScrollContainer]);
   const setEditorScrollContainerRef = useCallback((element: HTMLDivElement | null) => {
     editorScrollContainerRef.current = element;
     setEditorScrollContainer(element);
@@ -1274,7 +1288,8 @@ const RichEditorPane = ({
   } = useEditorMarkdownMode({
     editor,
     editorScrollContainerRef,
-    effectiveReadOnly,
+    // Reading protection is a view, so it must not block switching back to rich text or Markdown.
+    effectiveReadOnly: readOnly || (isMobileViewport && !mobileEditingActive),
     getMemoId: () => memoRef.current?.id,
     hydratingRef,
   });
@@ -2902,8 +2917,9 @@ const RichEditorPane = ({
     if (handledReadingProtectionToggleTokenRef.current === readingProtectionToggleToken) return;
     handledReadingProtectionToggleTokenRef.current = readingProtectionToggleToken;
     if (editorShortcutBlocked || isMobileViewport || readOnly || !memoRef.current) return;
+    if (isMarkdownMode) handleMarkdownModeChange();
     toggleDesktopReadingProtection();
-  }, [editorShortcutBlocked, isMobileViewport, readOnly, readingProtectionToggleToken, toggleDesktopReadingProtection]);
+  }, [editorShortcutBlocked, handleMarkdownModeChange, isMarkdownMode, isMobileViewport, readOnly, readingProtectionToggleToken, toggleDesktopReadingProtection]);
 
   useEffect(() => {
     if (handledEditorModeToggleTokenRef.current === editorModeToggleToken) {
@@ -2915,8 +2931,35 @@ const RichEditorPane = ({
       return;
     }
 
+    if (desktopReadingProtection) {
+      setDesktopReadingProtection(false);
+      writeDesktopReadingProtectionPreference(false);
+    }
     handleMarkdownModeChange();
-  }, [editorModeToggleToken, editorShortcutBlocked, handleMarkdownModeChange, useMobilePlainTextEditor]);
+  }, [desktopReadingProtection, editorModeToggleToken, editorShortcutBlocked, handleMarkdownModeChange, useMobilePlainTextEditor]);
+
+  const editorView = !isMobileViewport && desktopReadingProtection
+    ? "reading"
+    : useMarkdownSourceEditor
+      ? "markdown"
+      : "rich";
+  const selectEditorView = useCallback((view: "rich" | "markdown" | "reading") => {
+    if (view === "reading") {
+      if (isMarkdownMode) handleMarkdownModeChange();
+      if (!desktopReadingProtection) {
+        setDesktopReadingProtection(true);
+        writeDesktopReadingProtectionPreference(true);
+      }
+      return;
+    }
+
+    if (desktopReadingProtection) {
+      setDesktopReadingProtection(false);
+      writeDesktopReadingProtectionPreference(false);
+    }
+    if (view === "markdown" && !isMarkdownMode) handleMarkdownModeChange();
+    if (view === "rich" && isMarkdownMode) handleMarkdownModeChange();
+  }, [desktopReadingProtection, handleMarkdownModeChange, isMarkdownMode]);
 
   useEffect(() => {
     if (handledOutlineToggleTokenRef.current === outlineToggleToken) {
@@ -3481,8 +3524,23 @@ const RichEditorPane = ({
         deleteDescription: t("editor.attachmentActions.deleteDescription"),
       };
 
+  const editorColumnMatchesArticle = !useMarkdownSourceEditor;
+  const editorColumnStyle: CSSProperties | undefined = editorColumnMatchesArticle && !desktopFocusMode && editorContentAlignment === "center"
+    ? {
+        maxWidth: editorOutlineCollapsed
+          ? EDITOR_CONTENT_MAX_WIDTH_COLLAPSED
+          : EDITOR_CONTENT_MAX_WIDTH,
+      }
+    : undefined;
+  const savedQuietly = saveState !== "saving"
+    && saveState !== "error"
+    && saveState !== "conflict"
+    && saveState !== "queued"
+    && !hasUnsavedChanges;
+  const saveStatusLabel = `${saveLabel} · ${t("editor.characterCount", { count: characterCount })}`;
+
   return (
-    <div className="relative flex h-full min-w-0 flex-col bg-card">
+    <div className="relative flex h-full min-w-0 flex-col bg-transparent">
       {selectionActionBar}
       <ExternalLinkDialog
         open={externalLinkDialogOpen}
@@ -3533,8 +3591,26 @@ const RichEditorPane = ({
           onInsert={insertMemoLink}
         />
       )}
-      <header className="shrink-0 border-b border-slate-200 bg-card">
+      <header className="shrink-0 border-b border-[var(--workspace-divider)] bg-transparent">
         <div className={MEMO_EDITOR_TOP_ROW_CLASS_NAME}>
+          <div
+            className={cn(
+              "flex min-w-0 flex-1",
+              desktopFocusMode && "mx-auto w-full max-w-[1400px]",
+              editorColumnMatchesArticle && editorContentAlignment === "center" && "justify-center",
+            )}
+            style={editorColumnMatchesArticle ? { paddingLeft: editorScrollbarGutter, paddingRight: editorScrollbarGutter } : undefined}
+          >
+          <div
+            className={cn(
+              "min-w-0 w-full",
+              editorColumnMatchesArticle ? MEMO_EDITOR_READING_GUTTER_CLASS_NAME : "px-3 sm:px-4",
+              "pr-36 sm:!pr-44",
+              (desktopFocusMode || editorColumnStyle) && "mx-auto",
+              desktopFocusMode && "max-w-[960px]",
+            )}
+            style={editorColumnStyle}
+          >
           <MemoEditorTopRowLeading
             mobileBackButton={(
               <Button
@@ -3551,6 +3627,7 @@ const RichEditorPane = ({
             )}
             titleInput={(
               <MemoTitleInput
+                className="px-0"
                 value={title}
                 readOnly={effectiveReadOnly}
                 onValueChange={(nextTitle) => {
@@ -3562,16 +3639,15 @@ const RichEditorPane = ({
               />
             )}
           />
+          </div>
+          {editorColumnMatchesArticle && editorContentAlignment === "center" && !desktopFocusMode && !editorOutlineCollapsed ? (
+            <div aria-hidden="true" className="hidden shrink-0 lg:block" style={{ width: `calc(${EDITOR_OUTLINE_WIDTH} + 2rem)` }} />
+          ) : null}
+          </div>
 
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="absolute right-1 top-0 flex h-full shrink-0 items-center gap-1 sm:right-2">
             <div className="flex min-w-0 items-center gap-1.5">
               <MemoEditorUpdatedLabel updatedLabel={updatedLabel} />
-            <span
-              className="hidden whitespace-nowrap px-1.5 text-xs tabular-nums text-slate-400 sm:inline-flex"
-              title={t("editor.characterCount", { count: characterCount })}
-            >
-              {t("editor.characterCount", { count: characterCount })}
-            </span>
             {imageUploadState !== "idle" && (
               <span
                 className={cn(
@@ -3588,13 +3664,16 @@ const RichEditorPane = ({
                     : t("editor.uploadState.fileUploading")}
               </span>
             )}
+            <IconTooltip label={saveConflictReason ? `${saveStatusLabel}. ${saveConflictReason}` : saveStatusLabel}>
             <m.span
               key={`${saveState}-${String(hasUnsavedChanges)}`}
-              className={cn("hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium sm:inline-flex", saveStateClassName)}
+              className={cn(
+                "hidden items-center gap-1 rounded-md text-xs font-medium sm:inline-flex",
+                savedQuietly ? "px-1 text-slate-400" : cn("px-1.5 py-0.5", saveStateClassName),
+              )}
               role="status"
               aria-live="polite"
-              title={saveConflictReason ?? undefined}
-              aria-label={saveState === "conflict" && saveConflictReason ? `${saveLabel}. ${saveConflictReason}` : undefined}
+              aria-label={saveState === "conflict" && saveConflictReason ? `${saveStatusLabel}. ${saveConflictReason}` : saveStatusLabel}
               {...statusSettleMotion}
             >
               {saveState === "saving" ? (
@@ -3606,8 +3685,9 @@ const RichEditorPane = ({
               ) : (
                 <Check className="h-3 w-3" aria-hidden="true" />
               )}
-              {saveLabel}
+              {savedQuietly ? null : saveLabel}
             </m.span>
+            </IconTooltip>
             <m.span
               key={`${imageUploadState}-${saveState}-${String(hasUnsavedChanges)}`}
               className={cn("inline-flex max-w-[5.5rem] truncate rounded-full px-2 py-1 text-xs font-medium sm:hidden", mobileStatusClassName)}
@@ -3628,7 +3708,7 @@ const RichEditorPane = ({
             />
             {isMemoShared && !readOnly && (
               <Button
-                className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 hover:text-emerald-800 focus-visible:ring-emerald-500"
+                className="h-8 w-8 text-slate-700"
                 size="icon"
                 variant="ghost"
                 type="button"
@@ -3703,7 +3783,7 @@ const RichEditorPane = ({
             )}
             <MemoEditorHeaderActions
               moreButtonClassName={cn(!mobileEditingActive && !readOnly && "hidden sm:inline-flex")}
-              moreMenuClassName="w-44 rounded-md"
+              moreMenuClassName="w-56 rounded-md"
               onOpenExecutionCenter={onOpenExecutionCenter}
               onSearch={() => openNoteSearch()}
               onSystemInfoOpenChange={setSystemInfoOpen}
@@ -3711,78 +3791,51 @@ const RichEditorPane = ({
                 <>
                   {!effectiveReadOnly && (
                     <IconTooltip label={`${t("aiAssistant.open")} (${formatShortcutBinding(shortcutSettings.openAiAssistant)})`}>
-                      <Button className="hidden h-8 w-8 text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-300 sm:inline-flex" size="icon" variant="ghost" aria-label={t("aiAssistant.open")} onClick={openAiAssistant}>
+                      <Button className="hidden h-8 w-8 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-300 sm:inline-flex" size="icon" variant="ghost" aria-label={t("aiAssistant.open")} onClick={openAiAssistant}>
                         <Sparkles className="h-4 w-4" strokeWidth={1.75} />
                       </Button>
                     </IconTooltip>
                   )}
-                  {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && (
-                    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            className={cn(
-                              "hidden h-8 w-8 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-300 xl:inline-flex",
-                              phonePreviewOpen && "bg-emerald-50 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900",
-                            )}
-                            size="icon"
-                            variant="ghost"
-                            aria-label={phonePreviewOpen ? t("editor.hidePhonePreview") : t("editor.showPhonePreview")}
-                            aria-pressed={phonePreviewOpen || undefined}
-                            onClick={() => handlePhonePreviewChange(!phonePreviewOpen)}
-                          >
-                            <PhonePreviewGlyph className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          {phonePreviewOpen ? t("editor.hidePhonePreview") : t("editor.showPhonePreview")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          className={cn(
-                            "hidden h-8 w-8 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-300 min-[1600px]:inline-flex",
-                            wechatCopyState === "copying" && "bg-slate-100 text-slate-700",
-                            wechatCopyState === "copied" && "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100",
-                            wechatCopyState === "error" && "bg-rose-100 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100"
-                          )}
-                          size="icon"
-                          variant="ghost"
-                          aria-label={t("editor.copyToWeChat")}
-                          onClick={() => void handleCopyToWeChat()}
-                          disabled={!editor || useMobilePlainTextEditor || wechatCopyState === "copying"}
-                        >
-                          {wechatCopyState === "copying" ? (
-                            <LoaderCircle className="h-4 w-4 animate-spin" />
-                          ) : wechatCopyState === "copied" ? (
-                            <Check className="h-4 w-4" strokeWidth={2.25} />
-                          ) : wechatCopyState === "error" ? (
-                            <CircleAlert className="h-4 w-4" strokeWidth={1.75} />
-                          ) : (
-                            <WeChatIcon className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        {t(wechatCopyState === "copying" ? "editor.copyingToWeChat" : wechatCopyState === "copied" ? "editor.copiedToWeChat" : wechatCopyState === "error" ? "editor.copyToWeChatFailed" : "editor.copyToWeChat")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </>
               )}
-              textNoteMenuItems={!effectiveReadOnly ? (
+              textNoteMenuItems={(
+                <>
+                  {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && (
+                    <DropdownMenuItem
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                      onClick={() => handlePhonePreviewChange(!phonePreviewOpen)}
+                    >
+                      <PhonePreviewGlyph className="h-4 w-4 text-slate-500" />
+                      {phonePreviewOpen ? t("editor.hidePhonePreview") : t("editor.showPhonePreview")}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
-                    className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-emerald-700 hover:bg-emerald-50 cursor-pointer outline-none"
-                    onClick={openAiAssistant}
+                    className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                    disabled={!editor || useMobilePlainTextEditor || wechatCopyState === "copying"}
+                    onClick={() => void handleCopyToWeChat()}
                   >
-                    <Sparkles className="h-4 w-4 text-emerald-600" />
-                    {t("aiAssistant.title")}
+                    {wechatCopyState === "copying" ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin text-slate-500" />
+                    ) : wechatCopyState === "copied" ? (
+                      <Check className="h-4 w-4 text-slate-500" />
+                    ) : wechatCopyState === "error" ? (
+                      <CircleAlert className="h-4 w-4 text-rose-600" />
+                    ) : (
+                      <WeChatIcon className="h-4 w-4 text-slate-500" />
+                    )}
+                    {t(wechatCopyState === "copying" ? "editor.copyingToWeChat" : wechatCopyState === "copied" ? "editor.copiedToWeChat" : wechatCopyState === "error" ? "editor.copyToWeChatFailed" : "editor.copyToWeChat")}
                   </DropdownMenuItem>
-                ) : null}
+                  {!effectiveReadOnly ? (
+                    <DropdownMenuItem
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none sm:hidden"
+                      onClick={openAiAssistant}
+                    >
+                      <Sparkles className="h-4 w-4 text-slate-500" />
+                      {t("aiAssistant.title")}
+                    </DropdownMenuItem>
+                  ) : null}
+                </>
+              )}
               moreMenuItems={(
                 <>
                 <DropdownMenuItem
@@ -3897,7 +3950,11 @@ const RichEditorPane = ({
           </div>
         </div>
 
-        <div className={MEMO_EDITOR_TITLE_REGION_CLASS_NAME}>
+        <div
+          className={cn(desktopFocusMode && "mx-auto w-full max-w-[1400px]", editorColumnMatchesArticle && editorContentAlignment === "center" && "flex justify-center")}
+          style={editorColumnMatchesArticle ? { paddingLeft: editorScrollbarGutter, paddingRight: editorScrollbarGutter } : undefined}
+        >
+          <div className={cn(MEMO_EDITOR_TITLE_REGION_CLASS_NAME, useMarkdownSourceEditor && "lg:px-4", "min-w-0 w-full", (desktopFocusMode || editorColumnStyle) && "mx-auto", desktopFocusMode && "max-w-[960px]")} style={editorColumnStyle}>
           <MemoEditorMetadataRow
             contentMarkdown={currentMarkdownForAi}
             disabled={effectiveReadOnly}
@@ -3937,6 +3994,10 @@ const RichEditorPane = ({
               </>
             )}
           />
+          </div>
+          {editorColumnMatchesArticle && editorContentAlignment === "center" && !desktopFocusMode && !editorOutlineCollapsed ? (
+            <div aria-hidden="true" className="hidden shrink-0 lg:block" style={{ width: `calc(${EDITOR_OUTLINE_WIDTH} + 2rem)` }} />
+          ) : null}
         </div>
         {noteSearchOpen ? (
           <EditorNoteSearchBar
@@ -3958,7 +4019,10 @@ const RichEditorPane = ({
           <EditorToolbar
             editor={editor}
             readOnly={effectiveReadOnly}
+            viewSwitchDisabled={readOnly}
             markdownMode={useMarkdownSourceEditor}
+            editorView={editorView}
+            onEditorViewChange={isMobileViewport ? undefined : selectEditorView}
             onMarkdownModeChange={handleMarkdownModeChange}
             markdownModeShortcut={shortcutSettings.toggleEditorMode}
             onPickAttachment={() => fileInputRef.current?.click()}
@@ -4021,7 +4085,7 @@ const RichEditorPane = ({
             : {}),
         } as CSSProperties}
         className={cn(
-          "edgeever-editor relative min-h-0 flex-1 bg-card",
+          "edgeever-editor relative min-h-0 flex-1 bg-transparent",
           useMobilePlainTextEditor
             ? "overflow-visible"
             : useMarkdownSourceEditor
@@ -4047,7 +4111,7 @@ const RichEditorPane = ({
             "flex gap-8 transition-all duration-200",
             useMarkdownSourceEditor
               ? "h-full min-h-0 flex-1 items-stretch px-0 py-0"
-              : "min-h-full items-start px-4 py-2 sm:px-7 lg:px-24",
+              : cn("min-h-full items-start py-2", MEMO_EDITOR_READING_GUTTER_CLASS_NAME),
             desktopFocusMode
               ? "mx-auto w-full max-w-[1400px] justify-center"
               : editorContentAlignment === "center"

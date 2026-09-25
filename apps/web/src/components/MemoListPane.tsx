@@ -52,7 +52,6 @@ import {
   Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1201,171 +1200,6 @@ export const MemoListPane = ({
           </div>
         </div>
 
-        <div className="mb-3 hidden flex-wrap items-center justify-between gap-2 lg:flex">
-          <div className="flex min-w-0 flex-wrap items-center gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              title={t("memoList.selectMemo")}
-              aria-label={t("memoList.selectMemo")}
-              onClick={onEnterSelectionMode}
-              disabled={!canEnterSelectionMode}
-            >
-              <CheckSquare className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-xs font-medium transition-all duration-200 outline-none",
-                    filterMode === "all"
-                      ? "border-slate-200 bg-card text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      : "border-slate-300 bg-slate-100 text-slate-900 hover:bg-slate-200"
-                  )}
-                  title={t("memoList.filterTitle", { label: activeFilterLabel })}
-                >
-                  {getMobileFilterIcon(filterMode)}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44 bg-card border border-slate-200 rounded-md py-1 shadow-md">
-                {filterOptions.map((option: any) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    className={cn(
-                      "flex h-9 w-full items-center gap-2 px-3 text-left text-sm cursor-pointer outline-none",
-                      filterMode === option.value ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-50"
-                    )}
-                    onClick={() => handleFilterModeChange(option.value)}
-                  >
-                    {getMobileFilterIcon(option.value)}
-                    <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-card text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 outline-none"
-                  title={t("memoList.sortTitle", { label: activeSortLabel })}
-                >
-                  <ArrowDownWideNarrow className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44 bg-card border border-slate-200 rounded-md py-1 shadow-md">
-                {memoSortOptions.map((option: any) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    className={cn(
-                      "flex h-9 w-full items-center gap-2 px-3 text-left text-sm cursor-pointer outline-none",
-                      sortMode === option.value ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-50"
-                    )}
-                    onClick={() => onSortModeChange(option.value)}
-                  >
-                    <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <ToggleGroup
-              className="h-8 shrink-0 overflow-hidden rounded-md border border-border bg-card"
-              type="single"
-              value={listDensity}
-              onValueChange={(value) => {
-                if (value) {
-                  handleListDensityChange(value as MemoListDensity);
-                }
-              }}
-            >
-              <ToggleGroupItem
-                className="rounded-none border-0"
-                size="icon"
-                title={t("memoList.previewList")}
-                value="preview"
-                aria-label={t("memoList.previewList")}
-              >
-                <LayoutList className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                className="rounded-none border-0 border-l border-border"
-                size="icon"
-                title={t("memoList.compactList")}
-                value="compact"
-                aria-label={t("memoList.compactList")}
-              >
-                <List className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              title={syncMemosTitle}
-              aria-label={syncMemosTitle}
-              disabled={!canSyncMemos || isSyncingMemos}
-              onClick={onSyncMemos}
-            >
-              <RefreshCw className={cn("h-4 w-4", isSyncingMemos && "animate-spin")} />
-            </Button>
-            {view === "trash" && (
-              <Button
-                size="sm"
-                variant="danger"
-                title={t("memoList.emptyTrashTitle")}
-                onClick={onEmptyTrash}
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("memoList.emptyTrash")}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  title={t("memoList.more")}
-                  aria-label={t("memoList.moreActions")}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-card border border-slate-200 rounded-md py-1 shadow-md">
-                <DropdownMenuItem
-                  className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
-                  onClick={onOpenTags}
-                >
-                  <Tag className="h-4 w-4 text-slate-500" />
-                  {t("memoList.tags")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
-                  onClick={onOpenAssets}
-                >
-                  <Paperclip className="h-4 w-4 text-slate-500" />
-                  {t("memoList.assets")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
-                  onClick={view === "trash" ? onEmptyTrash : onOpenTrash}
-                >
-                  <Trash2 className="h-4 w-4 text-rose-700" />
-                  {view === "trash" ? t("memoList.emptyTrash") : t("memoList.trash")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
-                  onClick={onOpenSettings}
-                >
-                  <KeyRound className="h-4 w-4 text-slate-500" />
-                  MCP Token
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
         <div className={cn("items-center gap-2", mobileSearchActive ? "hidden lg:flex" : "flex")}>
           <div
             className={cn(
@@ -1409,6 +1243,120 @@ export const MemoListPane = ({
               </button>
             )}
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="hidden lg:inline-flex"
+                size="icon"
+                variant="ghost"
+                title={t("memoList.more")}
+                aria-label={t("memoList.moreActions")}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 border border-slate-200 bg-card py-1 shadow-md">
+              <DropdownMenuItem
+                className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                disabled={!canEnterSelectionMode}
+                onClick={onEnterSelectionMode}
+              >
+                <CheckSquare className="h-4 w-4 text-slate-500" />
+                {t("memoList.selectMemo")}
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="text-sm">{t("memoList.filterTitle", { label: activeFilterLabel })}</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-44 border border-slate-200 bg-card py-1 shadow-md">
+                  {filterOptions.map((option: any) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      className={cn(
+                        "flex h-9 w-full items-center gap-2 px-3 text-left text-sm cursor-pointer outline-none",
+                        filterMode === option.value ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-50",
+                      )}
+                      onClick={() => handleFilterModeChange(option.value)}
+                    >
+                      {getMobileFilterIcon(option.value)}
+                      <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="text-sm">{t("memoList.sortTitle", { label: activeSortLabel })}</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-44 border border-slate-200 bg-card py-1 shadow-md">
+                  {memoSortOptions.map((option: any) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      className={cn(
+                        "flex h-9 w-full items-center gap-2 px-3 text-left text-sm cursor-pointer outline-none",
+                        sortMode === option.value ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-50",
+                      )}
+                      onClick={() => onSortModeChange(option.value)}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="text-sm">{listDensity === "compact" ? t("memoList.compactList") : t("memoList.previewList")}</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-40 border border-slate-200 bg-card py-1 shadow-md">
+                  <DropdownMenuItem
+                    className={cn("text-sm", listDensity === "preview" && "bg-slate-100 text-slate-900")}
+                    onClick={() => handleListDensityChange("preview")}
+                  >
+                    <LayoutList className="h-4 w-4 text-slate-500" />
+                    {t("memoList.previewList")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className={cn("text-sm", listDensity === "compact" && "bg-slate-100 text-slate-900")}
+                    onClick={() => handleListDensityChange("compact")}
+                  >
+                    <List className="h-4 w-4 text-slate-500" />
+                    {t("memoList.compactList")}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuItem
+                className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                disabled={!canSyncMemos || isSyncingMemos}
+                onClick={onSyncMemos}
+              >
+                <RefreshCw className={cn("h-4 w-4 text-slate-500", isSyncingMemos && "animate-spin")} />
+                {syncMemosTitle}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                onClick={onOpenTags}
+              >
+                <Tag className="h-4 w-4 text-slate-500" />
+                {t("memoList.tags")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                onClick={onOpenAssets}
+              >
+                <Paperclip className="h-4 w-4 text-slate-500" />
+                {t("memoList.assets")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                onClick={view === "trash" ? onEmptyTrash : onOpenTrash}
+              >
+                <Trash2 className="h-4 w-4 text-rose-700" />
+                {view === "trash" ? t("memoList.emptyTrash") : t("memoList.trash")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                onClick={onOpenSettings}
+              >
+                <KeyRound className="h-4 w-4 text-slate-500" />
+                MCP Token
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex shrink-0 items-center gap-2 lg:hidden">
             {mobileFilterOptions.map((option: any) => (
               <button
@@ -1469,7 +1417,7 @@ export const MemoListPane = ({
 
       <div
         ref={setListScrollNode}
-        className="relative min-h-0 flex-1 overflow-y-auto p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:px-0 lg:pb-3 lg:[scrollbar-gutter:stable_both-edges]"
+        className="relative min-h-0 flex-1 overflow-y-auto p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:px-2 lg:py-2 lg:pb-3 lg:[scrollbar-gutter:stable_both-edges]"
       >
         {isLoading || (isRefreshing && memos.length === 0) ? (
           <div className="px-2 py-4 text-sm text-slate-500">{t("memoList.fetchingLatest")}</div>
