@@ -53,6 +53,12 @@
   --color-slate-800: rgb(var(--slate-800-rgb) / 1);
   --color-slate-900: rgb(var(--slate-900-rgb) / 1);
   --color-slate-950: rgb(var(--slate-950-rgb) / 1);
+  --color-workspace-canvas: var(--workspace-canvas);
+  --color-workspace-sidebar: var(--workspace-sidebar);
+  --color-workspace-memo-list: var(--workspace-memo-list);
+  --color-workspace-editor: var(--workspace-editor);
+  --color-workspace-selection: var(--workspace-selection);
+  --color-workspace-hover: var(--workspace-hover);
   --color-emerald-50: rgb(var(--brand-green-50-rgb) / 1);
   --color-emerald-100: rgb(var(--brand-green-100-rgb) / 1);
   --color-emerald-200: rgb(var(--brand-green-200-rgb) / 1);
@@ -292,6 +298,7 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --workspace-divider: #e1e5ea;
     --workspace-memo-divider: #e6eaee;
     --workspace-selection: #dde3e9;
+    --workspace-hover: color-mix(in srgb, var(--workspace-sidebar) 40%, white);
     --tooltip-bg: #1a1f1c;
     --tooltip-fg: #f4f7f5;
     --scrollbar-thumb: rgb(115 115 115 / 0.28);
@@ -406,6 +413,7 @@ html.dark[data-edgeever-environment="demo"] body::after {
   --workspace-divider: #2a312d;
   --workspace-memo-divider: #3b4540;
   --workspace-selection: #1d3028;
+  --workspace-hover: color-mix(in srgb, var(--workspace-sidebar) 82%, white);
   --tooltip-bg: #252c28;
   --tooltip-fg: #e9efeb;
   --scrollbar-thumb: rgb(137 150 142 / 0.38);
@@ -628,7 +636,7 @@ html[data-edgeever-extension-theme] kbd {
 }
 
 .edgeever-workspace-sidebar-footer {
-  background: color-mix(in srgb, var(--workspace-sidebar) 92%, transparent);
+  background: var(--workspace-sidebar);
 }
 
 .edgeever-workspace-selection {
@@ -717,7 +725,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 :root.dark .edgeever-workspace-sidebar-footer {
-  background: color-mix(in srgb, var(--workspace-sidebar) 90%, transparent);
+  background: var(--workspace-sidebar);
 }
 
 :root.dark .edgeever-workspace-selection,

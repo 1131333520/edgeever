@@ -168,7 +168,7 @@ export const AiPromptsPane = ({ onClose, onOpenExecutionCenter }: { onClose: () 
   const editorOpen = creating || Boolean(editing);
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col bg-slate-50/60">
+    <div className="flex h-full min-h-0 min-w-0 flex-col bg-workspace-canvas">
       <header className="flex h-[calc(3.75rem+env(safe-area-inset-top))] shrink-0 items-end justify-between border-b border-slate-200/80 bg-card px-6 pb-3 pt-[env(safe-area-inset-top)] shadow-2xs lg:h-16 lg:items-center lg:pb-0 lg:pt-0">
         <div className="flex min-w-0 items-center gap-3">
           <TooltipProvider delayDuration={0}>

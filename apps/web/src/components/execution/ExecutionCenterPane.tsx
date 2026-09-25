@@ -44,7 +44,7 @@ export const ExecutionCenterPane = ({
   const rangeEnd = Math.min(offset + items.length, totalCount);
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col bg-slate-50">
+    <div className="flex h-full min-h-0 min-w-0 flex-col bg-workspace-canvas">
       <header className="flex h-[calc(4rem+env(safe-area-inset-top))] shrink-0 items-end justify-between gap-3 border-b border-slate-200 bg-card px-4 pb-3 pt-[env(safe-area-inset-top)] lg:h-16 lg:items-center lg:px-6 lg:pb-0 lg:pt-0">
         <div className="flex min-w-0 items-center gap-3">
           <Button

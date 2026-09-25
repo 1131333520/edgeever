@@ -300,7 +300,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-slate-50/30 p-6">
+      <div className="flex-1 overflow-y-auto bg-workspace-canvas p-6">
         <div className="mx-auto max-w-4xl">
           {resourcesQuery.isLoading ? (
             <div className="flex flex-col items-center justify-center py-32 text-slate-400">
