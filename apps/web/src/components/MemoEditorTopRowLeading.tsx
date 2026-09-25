@@ -9,19 +9,22 @@ export const MemoEditorTopRowLeading = ({
   mobileBackButton,
   updatedLabel,
   onToggleDesktopFocusMode,
+  titleInput,
 }: {
   desktopFocusMode: boolean;
-  mobileBackButton: ReactNode;
+  mobileBackButton?: ReactNode;
   updatedLabel: string;
   onToggleDesktopFocusMode: () => void;
+  titleInput?: ReactNode;
 }) => {
   const { t } = useTranslation();
   const focusModeLabel = t(desktopFocusMode ? "editor.exitFocusMode" : "editor.focusMode");
 
   return (
-    <div className="flex min-w-0 items-center gap-2 text-sm">
+    <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
       {mobileBackButton}
-      <div className="hidden items-center lg:flex">
+      {titleInput && <div className="min-w-0 flex-1">{titleInput}</div>}
+      <div className="hidden shrink-0 items-center lg:flex">
         <IconTooltip label={focusModeLabel}>
           <Button
             size="sm"

@@ -3062,6 +3062,26 @@ export const DiagramEditorPane = ({
                 <TooltipContent>{t("diagram.back")}</TooltipContent>
               </Tooltip>
             )}
+            titleInput={(
+              <MemoTitleInput
+                value={title}
+                readOnly={readOnly}
+                placeholder={kindLabel}
+                ariaLabel={t("diagram.title")}
+                onValueChange={(nextTitle) => {
+                  titleRef.current = nextTitle;
+                  setTitle(nextTitle);
+                  setDirtyVersion((current) => current + 1);
+                  const graph = graphRef.current;
+                  if (graph) {
+                    setDirty(savedSnapshotRef.current !== diagramEditorSnapshot(
+                      nextTitle,
+                      graphToDocument(graph, document.kind, themeRef.current, structureRef.current),
+                    ));
+                  }
+                }}
+              />
+            )}
           />
 
           <div className="flex shrink-0 items-center gap-1">
@@ -3081,7 +3101,7 @@ export const DiagramEditorPane = ({
             <m.span
               key={saveStatus}
               className={cn(
-              "hidden items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium sm:inline-flex",
+              "hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium sm:inline-flex",
               saveStatusClassName,
             )}
               role="status"
@@ -3166,26 +3186,6 @@ export const DiagramEditorPane = ({
         </div>
 
         <div className={MEMO_EDITOR_TITLE_REGION_CLASS_NAME}>
-          <div className="min-w-0">
-            <MemoTitleInput
-              value={title}
-              readOnly={readOnly}
-              placeholder={kindLabel}
-              ariaLabel={t("diagram.title")}
-              onValueChange={(nextTitle) => {
-                titleRef.current = nextTitle;
-                setTitle(nextTitle);
-                setDirtyVersion((current) => current + 1);
-                const graph = graphRef.current;
-                if (graph) {
-                  setDirty(savedSnapshotRef.current !== diagramEditorSnapshot(
-                    nextTitle,
-                    graphToDocument(graph, document.kind, themeRef.current, structureRef.current),
-                  ));
-                }
-              }}
-            />
-          </div>
           <MemoEditorMetadataRow
             contentMarkdown={memo.contentMarkdown}
             disabled={readOnly}
