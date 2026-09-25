@@ -297,7 +297,7 @@ export const AiModelCard = () => {
 };
 
 const Field = ({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) => (
-  <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+  <label className="grid gap-1.5 text-xs font-normal leading-5 text-slate-700">
     {label}{children}{hint ? <span className="text-xs font-normal leading-4 text-slate-500">{hint}</span> : null}
   </label>
 );
