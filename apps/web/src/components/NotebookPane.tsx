@@ -942,11 +942,11 @@ export const NotebookPane = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex h-8 w-full items-center gap-3 rounded-md px-3 text-left text-xs font-medium leading-none text-slate-700 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 data-[state=open]:bg-slate-100 data-[state=open]:text-slate-950    "
+                className="flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-xs font-medium leading-5 text-slate-700 transition-colors duration-200 hover:bg-slate-200 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 data-[state=open]:bg-slate-200 data-[state=open]:text-slate-950"
                 type="button"
                 aria-label={t("pwa.sidebarDownloadsTitle") || "下载 EdgeEver 客户端与浏览器插件"}
               >
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-500">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                   <Download className="h-4 w-4" />
                 </span>
                 <span className="min-w-0 flex-1 truncate">{t("pwa.sidebarDownloads") || "下载客户端"}</span>
@@ -1152,7 +1152,7 @@ export const NotebookPane = ({
           <div className="flex items-center gap-1">
             <button
               onClick={onOpenSettings}
-              className="flex h-8 min-w-0 flex-1 items-center gap-3 rounded-md px-3 text-left text-xs font-medium leading-none text-slate-700 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70"
+              className="flex h-9 min-w-0 flex-1 items-center gap-3 rounded-md px-3 text-left text-xs font-medium leading-5 text-slate-700 transition-colors duration-200 hover:bg-slate-200 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70"
               type="button"
               aria-label={t("notebookPane.profile")}
             >
