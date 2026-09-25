@@ -1264,7 +1264,6 @@ export const zhCN = {
   },
   accountInfo: {
     title: "当前账户",
-    description: "当前设备正在登录的账户信息。",
   },
   systemInfo: {
     title: "系统信息",
@@ -2251,7 +2250,6 @@ export const zhCN = {
   },
   loginDevices: {
     title: "登录设备",
-    description: "查看当前账号仍保持登录的设备及最近访问时间。",
     loading: "正在加载登录设备...",
     loadFailed: "登录设备加载失败，请稍后重试。",
     empty: "暂无有效的登录设备。",
@@ -2305,7 +2303,6 @@ export const zhCN = {
   },
   password: {
     title: "修改密码",
-    description: "修改后会保留当前设备登录，并退出其他设备上的登录会话。",
     currentPassword: "当前密码",
     newPassword: "新密码",
     confirmPassword: "确认新密码",

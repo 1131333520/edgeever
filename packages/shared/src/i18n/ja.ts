@@ -1264,7 +1264,6 @@ export const ja = {
   },
   accountInfo: {
     title: "現在のアカウント",
-    description: "この端末でサインインしているアカウントです。",
   },
   systemInfo: {
     title: "システム情報",
@@ -2253,7 +2252,6 @@ export const ja = {
   },
   loginDevices: {
     title: "サインイン中の端末",
-    description: "このアカウントがまだサインインしている端末と、直近の利用状況を確認します。",
     loading: "サインイン中の端末を読み込み中...",
     loadFailed: "サインイン中の端末を読み込めませんでした。再試行してください。",
     empty: "有効なサインイン端末はありません。",
@@ -2307,7 +2305,6 @@ export const ja = {
   },
   password: {
     title: "パスワードを変更",
-    description: "現在の端末はサインインしたまま、他のセッションはサインアウトされます。",
     currentPassword: "現在のパスワード",
     newPassword: "新しいパスワード",
     confirmPassword: "新しいパスワードの確認",

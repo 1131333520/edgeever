@@ -1264,7 +1264,6 @@ export const enUS = {
   },
   accountInfo: {
     title: "Current account",
-    description: "The account currently signed in on this device.",
   },
   systemInfo: {
     title: "System info",
@@ -2253,7 +2252,6 @@ export const enUS = {
   },
   loginDevices: {
     title: "Signed-in devices",
-    description: "View devices where this account is still signed in and their latest activity.",
     loading: "Loading signed-in devices...",
     loadFailed: "Unable to load signed-in devices. Please try again.",
     empty: "No active signed-in devices.",
@@ -2307,7 +2305,6 @@ export const enUS = {
   },
   password: {
     title: "Change password",
-    description: "Your current device stays signed in; other sessions will be signed out.",
     currentPassword: "Current password",
     newPassword: "New password",
     confirmPassword: "Confirm new password",
