@@ -151,7 +151,8 @@ import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { DiagramToolbar, DiagramToolbarAddTrigger } from "@/components/DiagramToolbar";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
 import { MemoEditorMetadataRow } from "@/components/MemoEditorMetadataRow";
-import { MemoEditorTopRowLeading } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorFocusModeButton, MemoEditorTopRowLeading, MemoEditorUpdatedLabel } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorToolbarDivider } from "@/components/MemoEditorToolbarChrome";
 import {
   MEMO_EDITOR_TITLE_REGION_CLASS_NAME,
   MEMO_EDITOR_TOP_ROW_CLASS_NAME,
@@ -3049,9 +3050,6 @@ export const DiagramEditorPane = ({
       <header className="shrink-0 border-b border-slate-200 bg-card">
         <div className={MEMO_EDITOR_TOP_ROW_CLASS_NAME}>
           <MemoEditorTopRowLeading
-            desktopFocusMode={desktopFocusMode}
-            updatedLabel={updatedLabel}
-            onToggleDesktopFocusMode={onToggleDesktopFocusMode}
             mobileBackButton={(
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -3085,6 +3083,8 @@ export const DiagramEditorPane = ({
           />
 
           <div className="flex shrink-0 items-center gap-1">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <MemoEditorUpdatedLabel updatedLabel={updatedLabel} />
             <m.span
               key={`mobile-${saveStatus}`}
               className={cn(
@@ -3120,6 +3120,13 @@ export const DiagramEditorPane = ({
               )}
               {saveLabel}
             </m.span>
+            </div>
+            <MemoEditorToolbarDivider className="mx-0.5 hidden h-4 sm:block" />
+            <div className="flex items-center gap-0.5">
+            <MemoEditorFocusModeButton
+              desktopFocusMode={desktopFocusMode}
+              onToggleDesktopFocusMode={onToggleDesktopFocusMode}
+            />
             {!readOnly && saveFailed && (
               <Button variant="soft" size="sm" disabled={saving || !editSessionReady} onClick={() => void save()}>
                 <RefreshCw className="h-4 w-4" />
@@ -3182,6 +3189,7 @@ export const DiagramEditorPane = ({
                 </>
               )}
             />
+            </div>
           </div>
         </div>
 

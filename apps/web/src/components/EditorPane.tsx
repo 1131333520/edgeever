@@ -34,7 +34,8 @@ import { Button } from "@/components/ui/button";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
 import { MemoEditorMetadataRow } from "@/components/MemoEditorMetadataRow";
-import { MemoEditorTopRowLeading } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorFocusModeButton, MemoEditorTopRowLeading, MemoEditorUpdatedLabel } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorToolbarDivider } from "@/components/MemoEditorToolbarChrome";
 import {
   MEMO_EDITOR_TITLE_REGION_CLASS_NAME,
   MEMO_EDITOR_TOP_ROW_CLASS_NAME,
@@ -3535,9 +3536,6 @@ const RichEditorPane = ({
       <header className="shrink-0 border-b border-slate-200 bg-card">
         <div className={MEMO_EDITOR_TOP_ROW_CLASS_NAME}>
           <MemoEditorTopRowLeading
-            desktopFocusMode={desktopFocusMode}
-            updatedLabel={updatedLabel}
-            onToggleDesktopFocusMode={onToggleDesktopFocusMode}
             mobileBackButton={(
               <Button
                 className="lg:hidden"
@@ -3566,34 +3564,8 @@ const RichEditorPane = ({
           />
 
           <div className="flex shrink-0 items-center gap-1">
-            {isMemoShared && !readOnly && (
-              <Button
-                className="h-7 gap-1 rounded-full bg-emerald-50 px-2 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 hover:text-emerald-800 focus-visible:ring-emerald-500"
-                size="sm"
-                variant="ghost"
-                type="button"
-                title={t("sharing.manage")}
-                aria-label={t("sharing.manage")}
-                onClick={() => setShareOpen(true)}
-              >
-                <Share2 className="h-3 w-3" aria-hidden="true" />
-                <span className="hidden sm:inline">{t("sharing.active")}</span>
-              </Button>
-            )}
-            {!readOnly && !isMemoShared && !mobileEditingActive && (
-              <Button
-                className="h-8 w-8 text-slate-500 sm:hidden"
-                size="icon"
-                variant="ghost"
-                type="button"
-                title={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : "sharing.action")}
-                aria-label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : "sharing.action")}
-                disabled={isLocalMemoId(memo.id)}
-                onClick={() => setShareOpen(true)}
-              >
-                <Share2 className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            )}
+            <div className="flex min-w-0 items-center gap-1.5">
+              <MemoEditorUpdatedLabel updatedLabel={updatedLabel} />
             <span
               className="hidden whitespace-nowrap px-1.5 text-xs tabular-nums text-slate-400 sm:inline-flex"
               title={t("editor.characterCount", { count: characterCount })}
@@ -3647,6 +3619,40 @@ const RichEditorPane = ({
             >
               {mobileStatusLabel}
             </m.span>
+            </div>
+            <MemoEditorToolbarDivider className="mx-0.5 hidden h-4 sm:block" />
+            <div className="flex items-center gap-0.5">
+            <MemoEditorFocusModeButton
+              desktopFocusMode={desktopFocusMode}
+              onToggleDesktopFocusMode={onToggleDesktopFocusMode}
+            />
+            {isMemoShared && !readOnly && (
+              <Button
+                className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 hover:text-emerald-800 focus-visible:ring-emerald-500"
+                size="icon"
+                variant="ghost"
+                type="button"
+                title={t("sharing.manage")}
+                aria-label={t("sharing.manage")}
+                onClick={() => setShareOpen(true)}
+              >
+                <Share2 className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            )}
+            {!readOnly && !isMemoShared && !mobileEditingActive && (
+              <Button
+                className="h-8 w-8 text-slate-500 sm:hidden"
+                size="icon"
+                variant="ghost"
+                type="button"
+                title={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : "sharing.action")}
+                aria-label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : "sharing.action")}
+                disabled={isLocalMemoId(memo.id)}
+                onClick={() => setShareOpen(true)}
+              >
+                <Share2 className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            )}
             {mobileEditingActive && !readOnly && (
               <button
                 className="inline-flex h-8 items-center justify-center rounded-full bg-slate-950 px-3 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-500 sm:hidden"
@@ -3887,6 +3893,7 @@ const RichEditorPane = ({
                 </>
               )}
             />
+            </div>
           </div>
         </div>
 
