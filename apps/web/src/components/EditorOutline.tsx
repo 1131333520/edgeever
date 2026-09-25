@@ -203,7 +203,7 @@ export const EditorOutline = ({ editor, scrollContainer, collapsed, shortcutLabe
           <li key={item.pos}>
             <div
               className={cn(
-                "group flex min-h-8 items-center rounded-[6px] pr-2 text-[13px] leading-5 transition-colors duration-150",
+                "group flex min-h-8 items-center rounded-[6px] pr-2 text-[12px] leading-5 transition-colors duration-150",
                 isActive
                   ? "bg-slate-100 text-slate-900"
                   : "text-slate-700 hover:bg-slate-50/70 hover:text-slate-900"

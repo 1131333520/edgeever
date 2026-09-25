@@ -4047,7 +4047,7 @@ const RichEditorPane = ({
             "flex gap-8 transition-all duration-200",
             useMarkdownSourceEditor
               ? "h-full min-h-0 flex-1 items-stretch px-0 py-0"
-              : "min-h-full items-start px-4 py-2 sm:px-7 lg:px-10",
+              : "min-h-full items-start px-4 py-2 sm:px-7 lg:px-24",
             desktopFocusMode
               ? "mx-auto w-full max-w-[1400px] justify-center"
               : editorContentAlignment === "center"
