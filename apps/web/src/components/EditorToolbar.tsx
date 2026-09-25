@@ -392,7 +392,7 @@ export const EditorToolbar = ({
               </SelectTrigger>
               <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
                 {MARKDOWN_THEME_PREFERENCES.map((theme) => (
-                  <SelectItem key={theme} value={theme}>
+                  <SelectItem key={theme} value={theme} className="text-xs leading-5">
                     {t(`settings.markdownThemes.${theme}`)}
                   </SelectItem>
                 ))}
@@ -412,12 +412,12 @@ export const EditorToolbar = ({
             </SelectTrigger>
             <SelectContent className="min-w-[10rem] bg-card border border-slate-200 rounded-md py-1 shadow-md">
               {namedEditorThemes.map((theme) => (
-                <SelectItem key={theme} value={theme}>
+                <SelectItem key={theme} value={theme} className="text-xs leading-5">
                   {t(`settings.editorThemes.${theme}`)}
                 </SelectItem>
               ))}
               {customEditorThemes.map((theme) => (
-                <SelectItem key={theme.id} value={theme.id}>
+                <SelectItem key={theme.id} value={theme.id} className="text-xs leading-5">
                   {localizeStoredCustomThemeName(theme.name, {
                     defaultName: t("settings.customEditorTheme.defaultName"),
                     newName: (index) => t("settings.customEditorTheme.newName", { n: index }),
@@ -436,9 +436,9 @@ export const EditorToolbar = ({
               <SelectValue placeholder={t("editorToolbar.paragraph")} />
             </SelectTrigger>
             <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
-              <SelectItem value="paragraph">{t("editorToolbar.paragraph")}</SelectItem>
+              <SelectItem value="paragraph" className="text-xs leading-5">{t("editorToolbar.paragraph")}</SelectItem>
               {EDITOR_HEADING_LEVELS.map((level) => (
-                <SelectItem key={level} value={`heading-${level}`}>
+                <SelectItem key={level} value={`heading-${level}`} className="text-xs leading-5">
                   {t(`editorToolbar.heading${level}`)}
                 </SelectItem>
               ))}
@@ -552,7 +552,7 @@ export const EditorToolbar = ({
               </SelectTrigger>
               <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
                 {CODE_BLOCK_LANGUAGES.map((language) => (
-                  <SelectItem key={language.value} value={language.value}>
+                  <SelectItem key={language.value} value={language.value} className="text-xs leading-5">
                     {language.value === "plaintext" ? t("editorToolbar.plainText") : language.label}
                   </SelectItem>
                 ))}
