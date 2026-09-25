@@ -3590,7 +3590,7 @@ const RichEditorPane = ({
             )}
             <m.span
               key={`${saveState}-${String(hasUnsavedChanges)}`}
-              className={cn("hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium sm:inline-flex", saveStateClassName)}
+              className={cn("hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium sm:inline-flex", saveStateClassName)}
               role="status"
               aria-live="polite"
               title={saveConflictReason ?? undefined}
@@ -3610,7 +3610,7 @@ const RichEditorPane = ({
             </m.span>
             <m.span
               key={`${imageUploadState}-${saveState}-${String(hasUnsavedChanges)}`}
-              className={cn("inline-flex max-w-[5.5rem] truncate rounded-full px-2 py-1 text-[11px] font-medium sm:hidden", mobileStatusClassName)}
+              className={cn("inline-flex max-w-[5.5rem] truncate rounded-full px-2 py-1 text-xs font-medium sm:hidden", mobileStatusClassName)}
               role="status"
               aria-live="polite"
               title={saveConflictReason ?? undefined}

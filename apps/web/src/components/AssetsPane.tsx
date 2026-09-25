@@ -210,7 +210,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
               <Paperclip className="h-4.5 w-4.5 text-emerald-700" />
               {t("assets.title")}
             </h1>
-            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
               <span className="inline-flex items-center gap-1">
                 <HardDrive className="h-3 w-3" />
                 {formatBytes(summary.totalBytes)}
@@ -377,7 +377,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
                     )}
                     {/* Hover detail overlay */}
                     <div className="absolute inset-0 bg-slate-900/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center">
-                      <span className="rounded bg-card/90 px-2.5 py-1.5 text-[11px] font-semibold text-slate-800 shadow flex items-center gap-1">
+                      <span className="rounded bg-card/90 px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow flex items-center gap-1">
                         {resource.kind === "image"
                           ? t("assets.previewImage")
                           : isPdfAttachment(resource.mimeType, resource.filename)
@@ -395,7 +395,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
                         {resource.filename || resource.id}
                       </span>
                     </ButtonTooltip>
-                    <span className="mt-1 flex items-center justify-between text-[10px] font-medium text-slate-400">
+                    <span className="mt-1 flex items-center justify-between text-xs font-medium text-slate-400">
                       <span>{formatBytes(resource.byteSize)}</span>
                       <span>{(resource.mimeType?.split("/")[1] || resource.kind).toUpperCase()}</span>
                     </span>
@@ -458,11 +458,11 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
                     <span className="block truncate text-sm font-bold text-slate-800 leading-snug group-hover:text-emerald-700 transition-colors">
                       {resource.filename || resource.id}
                     </span>
-                    <span className="mt-1 block truncate text-[11px] font-medium text-slate-400">
+                    <span className="mt-1 block truncate text-xs font-medium text-slate-400">
                       {formatBytes(resource.byteSize)} · {resource.mimeType?.split("/")[1] || resource.kind} ·{" "}
                       {formatDateTime(resource.createdAt)}
                     </span>
-                    <span className="mt-1 block truncate text-[10px] text-slate-500">
+                    <span className="mt-1 block truncate text-xs text-slate-500">
                       {t("assets.sourceMemo", { source: getResourceMemoSource(resource) })}
                     </span>
                   </div>

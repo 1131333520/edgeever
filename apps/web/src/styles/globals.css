@@ -1331,18 +1331,18 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
  * rule links are indistinguishable from body text. Note/attachment chips below
  * use more specific selectors and keep their chip appearance. */
 .ProseMirror a {
-  color: var(--brand-green-text);
+  color: rgb(var(--slate-700-rgb));
   font-weight: 500;
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--brand-green-text) 45%, transparent);
+  text-decoration-color: color-mix(in srgb, rgb(var(--slate-700-rgb)) 45%, transparent);
   text-underline-offset: 2px;
   cursor: pointer;
   transition: color 150ms ease, text-decoration-color 150ms ease;
 }
 
 .ProseMirror a:hover {
-  color: var(--brand-green);
-  text-decoration-color: var(--brand-green);
+  color: rgb(var(--slate-950-rgb));
+  text-decoration-color: rgb(var(--slate-950-rgb));
 }
 
 .ProseMirror a:focus-visible {
@@ -1359,10 +1359,10 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   min-width: 1.5em;
   min-height: 1.5em;
   padding: 0 0.25em;
-  border: 1px solid var(--brand-green-border);
+  border: 1px solid rgb(var(--slate-200-rgb));
   border-radius: 0.35em;
-  background: var(--brand-green-soft);
-  color: var(--brand-green-text);
+  background: rgb(var(--slate-100-rgb));
+  color: rgb(var(--slate-700-rgb));
   font-size: 0.9em;
   font-weight: 700;
   line-height: 1;
@@ -1372,9 +1372,9 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 
 .ProseMirror a.edgeever-empty-external-link:hover,
 .markdown-content a.edgeever-empty-external-link:hover {
-  border-color: var(--brand-green);
-  background: var(--brand-green-muted);
-  color: var(--brand-green-text);
+  border-color: rgb(var(--slate-300-rgb));
+  background: rgb(var(--slate-200-rgb));
+  color: rgb(var(--slate-950-rgb));
   text-decoration: none;
 }
 
@@ -1391,14 +1391,14 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   gap: 0.2rem;
   max-width: min(100%, 32rem);
   padding: 0.03rem 0.32rem 0.05rem;
-  border: 1px solid var(--brand-green-border);
+  border: 1px solid rgb(var(--slate-200-rgb));
   border-radius: 0.35rem;
-  background: var(--brand-green-soft);
-  color: var(--brand-green-text);
+  background: rgb(var(--slate-100-rgb));
+  color: rgb(var(--slate-700-rgb));
   font-size: 0.9em;
   font-weight: 500;
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--brand-green) 55%, transparent);
+  text-decoration-color: color-mix(in srgb, rgb(var(--slate-500-rgb)) 55%, transparent);
   text-underline-offset: 2px;
   vertical-align: baseline;
   cursor: pointer;
@@ -1416,25 +1416,11 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 
 .ProseMirror a.edgeever-note-link:hover,
 .ProseMirror a[href^="#memo="]:hover {
-  color: var(--brand-green-text);
-  border-color: var(--brand-green);
-  background: var(--brand-green-muted);
-  text-decoration-color: var(--brand-green-text);
-  box-shadow: 0 2px 8px rgb(var(--brand-green-rgb) / 0.1);
-}
-
-:root.dark .ProseMirror a.edgeever-note-link,
-:root.dark .ProseMirror a[href^="#memo="] {
-  border-color: var(--brand-green-border);
-  background: var(--brand-green-soft);
-  color: var(--brand-green-text);
-}
-
-:root.dark .ProseMirror a.edgeever-note-link:hover,
-:root.dark .ProseMirror a[href^="#memo="]:hover {
-  border-color: var(--brand-green);
-  background: var(--brand-green-muted);
-  color: var(--brand-green-text);
+  color: rgb(var(--slate-950-rgb));
+  border-color: rgb(var(--slate-300-rgb));
+  background: rgb(var(--slate-200-rgb));
+  text-decoration-color: rgb(var(--slate-950-rgb));
+  box-shadow: none;
 }
 
 .ProseMirror a.edgeever-attachment-link,

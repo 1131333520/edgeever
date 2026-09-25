@@ -315,7 +315,7 @@ export const SettingsPane = ({
                   {item.badge ? (
                     <span
                       className={cn(
-                        "rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                        "rounded-full px-1.5 py-0.5 text-xs font-semibold leading-none",
                         isSelected
                           ? "bg-emerald-600/15 text-emerald-800"
                           : "bg-slate-200/80 text-slate-600"
@@ -386,7 +386,7 @@ export const SettingsPane = ({
                         </div>
                         <span className="text-sm font-semibold text-slate-800">{item.label}</span>
                         {item.badge ? (
-                          <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                          <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-xs font-semibold text-emerald-700">
                             {item.badge}
                           </span>
                         ) : null}
