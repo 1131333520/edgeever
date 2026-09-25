@@ -13,7 +13,12 @@ describe("tailwind theme tokens", () => {
     expect(css).toContain("--color-slate-950: rgb(var(--slate-950-rgb) / 1)");
     expect(css).toContain("--color-emerald-500: rgb(var(--brand-green-500-rgb) / 1)");
     expect(css).toContain("--color-amber-50: rgb(var(--amber-50-rgb) / 1)");
+    expect(css).toContain("--color-amber-300: rgb(var(--amber-300-rgb) / 1)");
+    expect(css).toContain("--color-amber-400: rgb(var(--amber-400-rgb) / 1)");
+    expect(css).toContain("--color-amber-500: rgb(var(--amber-500-rgb) / 1)");
     expect(css).toContain("--color-rose-50: rgb(var(--rose-50-rgb) / 1)");
+    expect(css).toContain("--color-rose-400: rgb(var(--rose-400-rgb) / 1)");
+    expect(css).toContain("--color-red-100: rgb(var(--rose-100-rgb) / 1)");
     expect(css).toContain("--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05)");
     expect(css).toContain("--blur-sm: 4px");
     expect(css).toContain(".focus-visible\\:outline-none:focus-visible");
