@@ -455,7 +455,7 @@ export const PreferenceCard = ({
               </div>
             </div>
             <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
-              <Button variant="outline" className="h-9 shrink-0 px-3 text-sm" onClick={handleEditClick}>
+              <Button variant="outline" className="h-9 shrink-0 px-3 text-xs" onClick={handleEditClick}>
                 {activeCustom || customEditorThemes.length > 0
                   ? t("settings.customEditorTheme.edit")
                   : t("settings.customEditorTheme.create")}
