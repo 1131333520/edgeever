@@ -21,7 +21,6 @@ import {
   Sigma,
   ChevronDown,
   ChevronUp,
-  BookOpen,
   FileCode2,
   Palette,
   Type,
@@ -92,7 +91,7 @@ const EditorToolbarButton = ({
         {children}
       </button>
     </TooltipTrigger>
-    <TooltipContent>{title}</TooltipContent>
+    <TooltipContent side="bottom">{title}</TooltipContent>
   </Tooltip>
 );
 
@@ -160,12 +159,11 @@ const toggleListAtSelection = (editor: Editor, listType: "bulletList" | "ordered
   }
 };
 
-export type EditorViewMode = "rich" | "markdown" | "reading";
+export type EditorViewMode = "rich" | "markdown";
 
 const EDITOR_VIEW_MODES = [
   { value: "rich", labelKey: "editorToolbar.richText", icon: Type },
   { value: "markdown", labelKey: "editorToolbar.markdown", icon: FileCode2 },
-  { value: "reading", labelKey: "editorToolbar.reading", icon: BookOpen },
 ] as const satisfies ReadonlyArray<{ value: EditorViewMode; labelKey: string; icon: typeof Type }>;
 
 export const EditorToolbar = ({
@@ -188,7 +186,7 @@ export const EditorToolbar = ({
   markdownMode?: boolean;
   editorView?: EditorViewMode;
   onEditorViewChange?: (view: EditorViewMode) => void;
-  /** Trash and other hard locks. Reading mode must not disable the view switch. */
+  /** Trash and other hard locks. Reading protection must not disable the view switch. */
   viewSwitchDisabled?: boolean;
   onMarkdownModeChange?: () => void;
   markdownModeShortcut?: ShortcutBinding;
@@ -373,7 +371,7 @@ export const EditorToolbar = ({
                 <TooltipContent side="bottom" className="flex items-center gap-2">
                   <span>{markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}</span>
                   {markdownModeShortcutLabel && (
-                    <kbd className="rounded border border-border/20 bg-card/10 px-1.5 py-0.5 font-mono text-xs leading-none">
+                    <kbd className="rounded border border-current/25 bg-current/10 px-1.5 py-0.5 font-mono text-xs leading-none">
                       {markdownModeShortcutLabel}
                     </kbd>
                   )}
